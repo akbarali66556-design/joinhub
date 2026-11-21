@@ -10,23 +10,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#08080c;--bg2:#101016;--card:#16161f;--card2:#1e1e2a;--line:#2a2a37;--line2:#3b3b4e;
-  --text:#f6f4ef;--mute:#b7b2c2;--dim:#7d7991;
-  --brand:#e7cd84;--brand2:#b8902f;--good:#2ec79a;--bad:#ff5d7d;--warn:#f0b45a;
-  --gold:#e7cd84;--gold2:#c8a24b;
+  --bg:#0b0618;--bg2:#17102e;--card:rgba(255,255,255,.065);--card2:rgba(255,255,255,.12);--line:rgba(255,255,255,.12);--line2:rgba(255,255,255,.2);
+  --text:#f3f1ff;--mute:#b7b0dc;--dim:#847cb4;
+  --brand:#7aa2ff;--brand2:#c85bff;--good:#2fe3a6;--bad:#ff5d8f;--warn:#ffc24b;
+  --gold:#a9bcff;--gold2:#c85bff;
   --ig:#e1306c;--fb:#1877f2;
-  --grad:linear-gradient(135deg,#f0da97,#c8a24b);
-  --btxt:#241a05;
-  --shadow:0 22px 60px rgba(0,0,0,.55);
-  --display:'Playfair Display',Georgia,serif;
+  --grad:linear-gradient(135deg,#4f8cff 0%,#9a5cff 52%,#ff5fb0 100%);
+  --btxt:#ffffff;
+  --shadow:0 24px 60px rgba(8,2,20,.6);
+  --display:'Inter',system-ui,-apple-system,sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
   font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 body{background:
-  radial-gradient(90% 55% at 50% -8%,rgba(231,205,132,.09),transparent 60%),
-  radial-gradient(70% 45% at 100% 0%,rgba(184,144,47,.06),transparent 55%),
-  var(--bg)}
+  radial-gradient(55% 45% at 10% 0%,rgba(79,140,255,.30),transparent 60%),
+  radial-gradient(50% 42% at 92% 6%,rgba(200,91,255,.26),transparent 60%),
+  radial-gradient(60% 50% at 75% 100%,rgba(255,95,176,.20),transparent 60%),
+  var(--bg);background-attachment:fixed}
 button{font-family:inherit;cursor:pointer}
 input{font-family:inherit}
 .hidden{display:none!important}
@@ -35,11 +36,12 @@ input{font-family:inherit}
 
 /* ---------- login ---------- */
 #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;
-  background:radial-gradient(130% 90% at 50% -10%,#1c1710 0%,#08080c 62%)}
-.loginbox{width:100%;max-width:410px;background:linear-gradient(180deg,#191922,#141019);
-  border:1px solid var(--line);border-radius:24px;padding:40px 32px;text-align:center;box-shadow:var(--shadow);position:relative}
-.loginbox::before{content:"";position:absolute;inset:0;border-radius:24px;padding:1px;
-  background:linear-gradient(160deg,rgba(231,205,132,.5),transparent 40%);
+  background:radial-gradient(72% 62% at 50% -8%,rgba(154,92,255,.42),transparent 62%),radial-gradient(60% 50% at 100% 100%,rgba(79,140,255,.3),transparent 60%),#0b0618}
+.loginbox{width:100%;max-width:410px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04));
+  backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);
+  border:1px solid var(--line);border-radius:26px;padding:40px 32px;text-align:center;box-shadow:var(--shadow);position:relative}
+.loginbox::before{content:"";position:absolute;inset:0;border-radius:26px;padding:1px;
+  background:linear-gradient(160deg,rgba(154,92,255,.7),rgba(79,140,255,.3) 45%,transparent 70%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
 .brandmark{width:70px;height:70px;border-radius:20px;margin:0 auto 18px;background:var(--grad);
   display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 12px 34px rgba(231,205,132,.35)}
@@ -55,7 +57,8 @@ input{font-family:inherit}
 
 /* ---------- app shell ---------- */
 #app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
-.side{background:linear-gradient(180deg,#0c1324,#0a0f1d);border-right:1px solid var(--line);
+.side{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);border-right:1px solid var(--line);
   padding:22px 16px;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;height:100vh}
 .side .logo{display:flex;align-items:center;gap:12px;padding:6px 10px 22px;font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:0}
 .side .logo .m{width:36px;height:36px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:19px}
@@ -139,6 +142,7 @@ tr:last-child td{border-bottom:0}
 .ibtn{border:0;background:var(--card2);color:var(--text);border-radius:8px;padding:7px 11px;font-size:12px;font-weight:800}
 .ibtn.ig{background:rgba(225,48,108,.18);color:#ff78ab}
 .ibtn.fb{background:rgba(24,119,242,.18);color:#7db0ff}
+.ibtn.meta{background:var(--grad);color:var(--btxt);font-weight:800}
 .ibtn:hover{filter:brightness(1.15)}
 .ccard .acts{display:flex;gap:9px}
 .ccard .acts button{flex:1;border:1px solid var(--line2);background:var(--card2);color:var(--text);border-radius:11px;padding:11px;font-weight:700;font-size:13.5px}
@@ -174,6 +178,13 @@ tr:last-child td{border-bottom:0}
 .tog::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--mute);transition:.18s}
 .tog.on{background:var(--grad);border-color:transparent}
 .tog.on::after{left:22px;background:#fff}
+/* iOS-style frosted glass on all cards */
+.stat,.panel,.ccard,.modal{backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:0 12px 34px rgba(8,2,20,.4),inset 0 1px 0 rgba(255,255,255,.1)}
+.ccard:hover{background:var(--card2)}
+.stat .ic,.badge{background:var(--grad)!important;color:#fff}
+.avatar{box-shadow:0 6px 16px rgba(8,2,20,.4)}
+.btn-primary:hover,.primary:hover,.save:hover{filter:brightness(1.08) saturate(1.1)}
 .legend{display:flex;gap:18px;font-size:12.5px;color:var(--mute);margin-top:10px}
 .legend span{display:flex;align-items:center;gap:7px}
 
@@ -489,6 +500,7 @@ tr:last-child td{border-bottom:0}
           <div><span>Fake</span><b style="color:var(--bad)">${num(s.fake)}</b></div>
           <div><span>Total</span><b>${num(s.total)}</b></div></div>
         <div class="urlrow"><code title="${base}">${base}</code>
+          <button class="ibtn meta" data-copy="${base}&utm_source={{site_source_name}}" title="Meta ad ka pura link (FB+IG dono)">📋 Meta</button>
           <button class="ibtn ig" data-copy="${base}&utm_source=instagram">IG</button>
           <button class="ibtn fb" data-copy="${base}&utm_source=facebook">FB</button></div>
         <div class="acts">
