@@ -36,7 +36,7 @@ function loadEnv(file) {
 }
 
 // ---------- tiny JSON database ----------
-let db = { clients: {}, visitors: {}, variantShown: {}, tgOffset: 0, tgUsers: {} };
+let db = { clients: {}, visitors: {}, variantShown: {}, tgOffset: 0, tgUsers: {}, channels: {}, settings: {} };
 try { if (fs.existsSync(DB_FILE)) db = { ...db, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) }; } catch (e) { console.error('db read failed', e.message); }
 let saveTimer = null;
 function save() {
@@ -77,6 +77,15 @@ function json(res, code, obj) { send(res, code, JSON.stringify(obj), { 'Content-
 function readBody(req) { return new Promise((resolve) => { let d = ''; req.on('data', (c) => { d += c; if (d.length > 2e5) req.destroy(); }); req.on('end', () => resolve(d)); }); }
 const okKey = (url) => (url.searchParams.get('key') || '') === CFG.adminKey;
 const baseUrl = (req) => CFG.publicUrl || (`${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`);
+// editable settings (dashboard se badalti hain, warna env/default)
+function settings() {
+  const s = db.settings || {};
+  return {
+    welcome: s.welcome !== undefined ? s.welcome : CFG.welcome,
+    autoApprove: s.autoApprove !== undefined ? s.autoApprove : CFG.autoApprove,
+    linkTtlMin: s.linkTtlMin !== undefined ? Number(s.linkTtlMin) : CFG.linkTtlMin,
+  };
+}
 
 // ---------- landing rotation ----------
 function variants() {
@@ -129,7 +138,7 @@ async function verifyChannel(chan) {
 }
 async function inviteLinkFor(v, client) {
   if (v.invite && v.inviteExpires > Date.now() / 1000 + 60) return v.invite;
-  const expire = Math.floor(Date.now() / 1000) + CFG.linkTtlMin * 60;
+  const expire = Math.floor(Date.now() / 1000) + settings().linkTtlMin * 60;
   const link = await tg('createChatInviteLink', { chat_id: client.chatId || client.tgChannel, name: `v_${v.id}`, expire_date: expire, creates_join_request: true });
   v.invite = link.invite_link; v.inviteExpires = expire; save();
   return v.invite;
@@ -139,8 +148,8 @@ async function pollTelegram() {
   try { await tg('deleteWebhook'); } catch {}
   for (;;) {
     try {
-      const updates = await tg('getUpdates', { offset: db.tgOffset, timeout: 25, allowed_updates: ['chat_join_request', 'chat_member'] });
-      for (const u of updates) { db.tgOffset = u.update_id + 1; if (u.chat_join_request) await onJoinRequest(u.chat_join_request); if (u.chat_member) onMemberChange(u.chat_member); }
+      const updates = await tg('getUpdates', { offset: db.tgOffset, timeout: 25, allowed_updates: ['chat_join_request', 'chat_member', 'my_chat_member'] });
+      for (const u of updates) { db.tgOffset = u.update_id + 1; if (u.chat_join_request) await onJoinRequest(u.chat_join_request); if (u.chat_member) onMemberChange(u.chat_member); if (u.my_chat_member) onMyChatMember(u.my_chat_member); }
       if (updates.length) save();
     } catch (e) { console.error('telegram poll:', e.message); await new Promise((r) => setTimeout(r, 5000)); }
   }
@@ -149,14 +158,23 @@ async function onJoinRequest(req) {
   const name = req.invite_link?.name || '';
   const vid = name.startsWith('v_') ? name.slice(2) : null;
   const v = vid && db.visitors[vid];
-  if (CFG.autoApprove) { try { await tg('approveChatJoinRequest', { chat_id: req.chat.id, user_id: req.from.id }); } catch (e) { console.error('approve:', e.message); } }
+  const S = settings();
+  if (S.autoApprove) { try { await tg('approveChatJoinRequest', { chat_id: req.chat.id, user_id: req.from.id }); } catch (e) { console.error('approve:', e.message); } }
   if (!v) return;
-  if (CFG.welcome) tg('sendMessage', { chat_id: req.user_chat_id || req.from.id, text: CFG.welcome }).catch(() => {});
+  if (S.welcome) tg('sendMessage', { chat_id: req.user_chat_id || req.from.id, text: S.welcome }).catch(() => {});
   await markJoined(v, { id: req.from.id, username: req.from.username, name: [req.from.first_name, req.from.last_name].filter(Boolean).join(' ') });
 }
 function onMemberChange(m) {
   const vid = db.tgUsers[m.new_chat_member.user.id]; const v = vid && db.visitors[vid];
   if (v && ['left', 'kicked'].includes(m.new_chat_member.status) && v.joinedAt && !v.leftAt) { v.leftAt = Date.now(); save(); }
+}
+// Bot ko jab kisi channel me admin banaya/hataया jaata hai — us channel ko yaad rakho
+function onMyChatMember(m) {
+  const chat = m.chat, st = m.new_chat_member; if (!chat || !st) return;
+  if (st.status === 'administrator') {
+    db.channels[String(chat.id)] = { id: chat.id, title: chat.title || chat.username || String(chat.id), username: chat.username || '', type: chat.type, canInvite: !!st.can_invite_users, updated: Date.now() };
+  } else { delete db.channels[String(chat.id)]; }
+  save();
 }
 async function markJoined(v, user) {
   if (v.joinedAt) return;
@@ -305,6 +323,23 @@ const server = http.createServer(async (req, res) => {
       if (cid) { if (!db.clients[cid]) return json(res, 400, { error: 'unknown client' }); return json(res, 200, { clientId: cid, client: db.clients[cid], agg: aggFor(cid) }); }
       const out = {}; for (const id of Object.keys(db.clients)) { const a = aggFor(id); out[id] = { name: db.clients[id].name, total: a.total, real: a.real, fake: a.fake }; }
       return json(res, 200, { clients: out, bot: BOT, demo: DEMO });
+    }
+    if (p === '/api/channels') {
+      if (!okKey(url)) return json(res, 401, { error: 'unauthorized' });
+      return json(res, 200, { channels: Object.values(db.channels || {}) });
+    }
+    if (p === '/api/settings') {
+      if (!okKey(url)) return json(res, 401, { error: 'unauthorized' });
+      if (req.method === 'GET') return json(res, 200, { settings: settings(), bot: BOT, demo: DEMO, designs: variants().length });
+      if (req.method === 'POST' || req.method === 'PUT') {
+        let b; try { b = JSON.parse(await readBody(req)); } catch { return json(res, 400, { error: 'bad json' }); }
+        if (b.welcome !== undefined) db.settings.welcome = String(b.welcome).slice(0, 500);
+        if (b.autoApprove !== undefined) db.settings.autoApprove = !!b.autoApprove;
+        if (b.linkTtlMin !== undefined) db.settings.linkTtlMin = Math.max(5, Math.min(10080, Number(b.linkTtlMin) || 120));
+        save();
+        return json(res, 200, { ok: true, settings: settings() });
+      }
+      return json(res, 405, { error: 'method not allowed' });
     }
 
     // ----- static (sirf dashboard.html — baaki files kabhi serve nahi) -----

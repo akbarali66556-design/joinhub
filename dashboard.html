@@ -166,6 +166,14 @@ tr:last-child td{border-bottom:0}
 .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800}
 .tag.real{background:rgba(31,217,154,.16);color:var(--good)}
 .tag.fake{background:rgba(255,93,125,.16);color:var(--bad)}
+.src{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800}
+.src.instagram{background:rgba(225,48,108,.16);color:#ff7bb0}
+.src.facebook{background:rgba(24,119,242,.16);color:#79b0ff}
+.src.other{background:rgba(255,255,255,.08);color:var(--mute)}
+.tog{width:46px;height:26px;border-radius:14px;background:var(--card2);border:1px solid var(--line2);position:relative;flex:none;padding:0;cursor:pointer}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--mute);transition:.18s}
+.tog.on{background:var(--grad);border-color:transparent}
+.tog.on::after{left:22px;background:#fff}
 .legend{display:flex;gap:18px;font-size:12.5px;color:var(--mute);margin-top:10px}
 .legend span{display:flex;align-items:center;gap:7px}
 
@@ -218,6 +226,7 @@ tr:last-child td{border-bottom:0}
     <div class="navlabel">Menu</div>
     <button class="nav active" data-tab="overview"><span class="ic">📊</span> Overview</button>
     <button class="nav" data-tab="clients"><span class="ic">👥</span> Clients</button>
+    <button class="nav" data-tab="settings"><span class="ic">⚙️</span> Settings</button>
     <div class="spacer"></div>
     <button class="logout" id="logout">⎋ Sign out</button>
   </aside>
@@ -245,6 +254,35 @@ tr:last-child td{border-bottom:0}
       </div>
       <div id="clientList"></div>
     </section>
+
+    <!-- SETTINGS -->
+    <section id="tab-settings" class="hidden">
+      <div class="page-head">
+        <div><h2>Settings</h2><div class="sub">System status aur join behaviour</div></div>
+        <button class="btnlink" id="refreshSet">↻ Refresh</button>
+      </div>
+      <div class="stats" id="setStatus" style="margin-bottom:22px"></div>
+      <div class="panel" style="max-width:640px">
+        <h3>Join behaviour</h3>
+        <div style="margin-bottom:16px">
+          <label class="lbl">Auto-approve join requests</label>
+          <div style="display:flex;align-items:center;gap:12px"><button class="tog" id="setAuto" aria-label="auto"></button><span class="hint" style="margin:0">ON = bot khud join request approve karega (recommended).</span></div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="lbl">Welcome message (join hone par)</label>
+          <textarea class="field" id="setWelcome" rows="2" placeholder="Jaise: Welcome! Aap channel me jud gaye 🎉 (khali = kuch nahi bhejega)"></textarea>
+        </div>
+        <div style="margin-bottom:18px">
+          <label class="lbl">Invite link valid time (minute)</label>
+          <input class="field" id="setTtl" inputmode="numeric" placeholder="120">
+        </div>
+        <button class="btn-primary" id="setSave">Save settings</button>
+      </div>
+      <div class="panel" style="max-width:640px;background:rgba(46,199,154,.06);border-color:rgba(46,199,154,.25)">
+        <h3 style="color:var(--good)">Meta ko kya jata hai</h3>
+        <p class="hint" style="font-size:13.5px;line-height:1.6;margin:0">Sirf <b style="color:var(--good)">REAL join</b> (jo banda sach me channel join karta hai) hi Meta ko Conversions API se jata hai. Bot / fake / sirf-click <b style="color:var(--bad)">kabhi nahi</b> bheje jate. Isliye Meta ke paas sirf asli joining ka count rehta hai.</p>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -258,8 +296,9 @@ tr:last-child td{border-bottom:0}
     </div>
     <div style="margin-top:16px">
       <label class="lbl">Telegram channel (bot must be admin)</label>
+      <select class="field" id="fChannelSelect" style="margin-bottom:8px"><option value="">— Bot jin channels me admin hai —</option></select>
       <input class="field" id="fChannel" placeholder="@channelusername  ya  -1001234567890">
-      <div class="hint">Jahan log join karenge. Aapka bot is channel me <b>admin</b> hona chahiye ("Invite via link" permission ke saath). Join yahin confirm hoga.</div>
+      <div class="hint">Bot ko channel me <b>admin</b> banao ("Invite via link" permission ON) → wo upar list me apne aap aa jata hai, bas select karo. Ya neeche @username / -100 id khud type karo. <b>Pehle se admin hai aur list me nahi?</b> Ek baar admin se hata ke dobara admin banao.</div>
     </div>
     <div style="margin-top:16px">
       <label class="lbl">Meta Pixel ID</label>
@@ -336,8 +375,35 @@ tr:last-child td{border-bottom:0}
     const t=b.dataset.tab;
     $('tab-overview').classList.toggle('hidden',t!=='overview');
     $('tab-clients').classList.toggle('hidden',t!=='clients');
-    if(t==='overview') loadOverview(); if(t==='clients') loadClients();
+    $('tab-settings').classList.toggle('hidden',t!=='settings');
+    if(t==='overview') loadOverview(); if(t==='clients') loadClients(); if(t==='settings') loadSettings();
   });
+
+  // ---------- settings ----------
+  let setAutoVal=true;
+  async function loadSettings(){
+    let d; try{ d=await (await api('/api/settings')).json(); }catch(e){ if(e.unauth) return location.reload(); return; }
+    const s=d.settings||{};
+    setAutoVal=!!s.autoApprove; $('setAuto').classList.toggle('on',setAutoVal);
+    $('setWelcome').value=s.welcome||''; $('setTtl').value=s.linkTtlMin||120;
+    const mode = d.demo ? '<span style="color:var(--warn)">DEMO</span>' : '<span style="color:var(--good)">LIVE</span>';
+    const botTxt = d.demo ? 'Token nahi' : (d.bot&&d.bot.ok?('@'+esc(d.bot.username||'')):'problem');
+    $('setStatus').innerHTML=
+      statCard('Mode',mode,'','🛰️')+
+      statCard('Telegram bot',botTxt,'','🤖')+
+      statCard('Landing designs',d.designs||0,'','🎨')+
+      statCard('Connected channels',(d.bot&&d.bot.ok?'Dekho Clients':'-'),'','📢');
+  }
+  $('setAuto').onclick=()=>{ setAutoVal=!setAutoVal; $('setAuto').classList.toggle('on',setAutoVal); };
+  $('setSave').onclick=async()=>{
+    $('setSave').disabled=true; $('setSave').textContent='Saving…';
+    try{ const res=await api('/api/settings',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({autoApprove:setAutoVal,welcome:$('setWelcome').value,linkTtlMin:$('setTtl').value})});
+      toast(res.ok?'Settings saved ✓':'Save failed',!res.ok);
+    }catch(e){ toast('Network error',true); }
+    finally{ $('setSave').disabled=false; $('setSave').textContent='Save settings'; }
+  };
+  $('refreshSet').onclick=loadSettings;
 
   function statCard(k,v,cls,icon,glow,sub){
     return `<div class="stat" style="--glow:${glow||'rgba(75,123,255,.08)'}">
@@ -439,10 +505,20 @@ tr:last-child td{border-bottom:0}
 
   // ---------- add/edit ----------
   $('addBtn').onclick=()=>openEdit(null,null);
+  async function fillChannels(sel){
+    const el=$('fChannelSelect'); if(!el) return;
+    try{ const d=await (await api('/api/channels')).json(); const ch=d.channels||[];
+      el.innerHTML='<option value="">— Bot jin channels me admin hai —</option>'+
+        ch.map(c=>`<option value="${esc(String(c.id))}"${String(c.id)===String(sel)?' selected':''}>${esc(c.title)}${c.username?' (@'+esc(c.username)+')':''}${c.canInvite?'':' ⚠ invite-perm off'}</option>`).join('')+
+        '<option value="__manual">✍ Khud type karunga</option>';
+    }catch(e){}
+  }
   function openEdit(id,c){ editingId=id; $('editTitle').textContent=id?'Edit client':'Add client';
     $('fName').value=c?.name||''; $('fChannel').value=c?.tgChannel||''; $('fPixel').value=c?.pixel||'';
     $('fToken').value=c?.metaToken||''; $('fTest').value=c?.metaTestCode||'';
+    fillChannels(c?.tgChannel||'');
     $('editOv').classList.add('show'); setTimeout(()=>$('fName').focus(),50); }
+  $('fChannelSelect').onchange=()=>{ const v=$('fChannelSelect').value; if(v&&v!=='__manual') $('fChannel').value=v; if(v==='__manual'){ $('fChannel').focus(); } };
   function closeEdit(){ $('editOv').classList.remove('show'); }
   $('editClose').onclick=closeEdit; $('editCancel').onclick=closeEdit;
   $('editOv').onclick=e=>{ if(e.target.id==='editOv') closeEdit(); };
@@ -491,7 +567,7 @@ tr:last-child td{border-bottom:0}
     // recent
     if(!a.recent||!a.recent.length) $('dRecent').innerHTML='<p style="color:var(--mute);font-size:13px">No activity yet.</p>';
     else $('dRecent').innerHTML=`<table><thead><tr><th>Time</th><th>Result</th><th>Source</th><th>Reason</th></tr></thead><tbody>`+
-      a.recent.map(r=>`<tr><td>${new Date(r.t).toLocaleString()}</td><td><span class="tag ${r.result}">${r.result}</span></td><td>${r.source}</td><td style="color:var(--mute)">${esc(r.reason||'-')}</td></tr>`).join('')+`</tbody></table>`;
+      a.recent.map(r=>{const sn={instagram:'Instagram',facebook:'Facebook',other:'Other'}[r.source]||r.source;return `<tr><td>${new Date(r.t).toLocaleString()}</td><td><span class="tag ${r.result}">${r.result==='real'?'joined':r.result}</span></td><td><span class="src ${r.source}">${sn}</span></td><td style="color:var(--mute)">${esc(r.reason||'-')}</td></tr>`;}).join('')+`</tbody></table>`;
   }
   $('detailClose').onclick=()=>$('detailOv').classList.remove('show');
   $('detailOv').onclick=e=>{ if(e.target.id==='detailOv') $('detailOv').classList.remove('show'); };
