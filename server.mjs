@@ -26,6 +26,16 @@ const DEMO = !CFG.tgToken;
 const ROOT = __dirname;                      // sab files flat root me (landing1..6.html, dashboard.html)
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
+// Optional free persistent DB (Upstash Redis REST) — taaki Render sleep/redeploy par data na jaye
+const UP_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
+const UP_TOK = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const useUpstash = !!(UP_URL && UP_TOK);
+async function upstash(cmd) {
+  const r = await fetch(UP_URL, { method: 'POST', headers: { Authorization: `Bearer ${UP_TOK}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cmd) });
+  const j = await r.json(); if (j.error) throw new Error(j.error); return j.result;
+}
+async function loadDbRemote() { try { const v = await upstash(['GET', 'joinhub_db']); if (v) { db = { ...db, ...JSON.parse(v) }; console.log('  DB: Upstash se load hua'); } } catch (e) { console.error('upstash load:', e.message); } }
+async function saveDbRemote() { try { await upstash(['SET', 'joinhub_db', JSON.stringify(db)]); } catch (e) { console.error('upstash save:', e.message); } }
 
 function loadEnv(file) {
   if (!fs.existsSync(file)) return;
@@ -43,10 +53,8 @@ function save() {
   if (saveTimer) return;
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    const tmp = DB_FILE + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(db));
-    fs.renameSync(tmp, DB_FILE);
+    try { fs.mkdirSync(DATA_DIR, { recursive: true }); const tmp = DB_FILE + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(db)); fs.renameSync(tmp, DB_FILE); } catch (e) {}
+    if (useUpstash) saveDbRemote();
   }, 400);
 }
 setInterval(() => {
@@ -352,13 +360,19 @@ const server = http.createServer(async (req, res) => {
   } catch (e) { console.error(e); send(res, 500, 'Server error'); }
 });
 
-server.listen(CFG.port, async () => {
+async function boot() {
+  if (useUpstash) await loadDbRemote();
+  server.listen(CFG.port, onListen);
+}
+async function onListen() {
   console.log(`\n  JoinHub chal raha hai:`);
   console.log(`  Dashboard : ${CFG.publicUrl || 'http://localhost:' + CFG.port}/dashboard.html   (key: ${CFG.adminKey})`);
   console.log(`  Landing   : /?c=<clientId>`);
   console.log(`  Designs   : ${variants().join(', ') || '(koi nahi)'}`);
+  console.log(`  Storage   : ${useUpstash ? 'Upstash (permanent) ✓' : 'local file (Render par reset ho sakta hai)'}`);
   if (DEMO) console.log('  ⚠ DEMO mode: .env me TELEGRAM_BOT_TOKEN daalo for real joins.');
   await checkBot();
   console.log(`  Telegram  : ${BOT.message}\n`);
   pollTelegram();
-});
+}
+boot();
