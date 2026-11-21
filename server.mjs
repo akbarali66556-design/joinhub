@@ -46,7 +46,7 @@ function loadEnv(file) {
 }
 
 // ---------- tiny JSON database ----------
-let db = { clients: {}, visitors: {}, variantShown: {}, tgOffset: 0, tgUsers: {}, channels: {}, settings: {} };
+let db = { clients: {}, visitors: {}, variantShown: {}, tgOffset: 0, tgUsers: {}, channels: {}, settings: {}, pending: {}, otherJoins: {} };
 try { if (fs.existsSync(DB_FILE)) db = { ...db, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) }; } catch (e) { console.error('db read failed', e.message); }
 let saveTimer = null;
 function save() {
@@ -71,6 +71,16 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24) || ('c' + Date.now().toString(36));
 const SOURCES = ['instagram', 'facebook', 'other'];
 const normSource = (s) => { s = (s || 'other').toLowerCase(); if (s.includes('insta') || s === 'ig') return 'instagram'; if (s.includes('face') || s === 'fb') return 'facebook'; return SOURCES.includes(s) ? s : 'other'; };
+// utm_source ho to wahi; warna referer (Instagram/Facebook) se auto-detect — taaki chhota link bhi source pakde
+function detectSource(url, req) {
+  let s = normSource(url.searchParams.get('utm_source'));
+  if (s === 'other') {
+    const r = (req.headers['referer'] || req.headers['referrer'] || '').toLowerCase();
+    if (r.includes('instagram') || r.includes('ig.')) s = 'instagram';
+    else if (r.includes('facebook') || r.includes('fb.') || r.includes('fb_')) s = 'facebook';
+  }
+  return s;
+}
 
 function cookies(req) {
   const out = {};
@@ -133,6 +143,16 @@ async function checkBot() {
   try { const me = await tg('getMe'); BOT = { ok: true, id: me.id, username: me.username, message: `@${me.username} जुड़ा है` }; }
   catch (e) { BOT = { ok: false, message: e.message }; }
 }
+// Har client ke channel ke total members (Telegram se)
+async function refreshMemberCounts() {
+  if (DEMO) return;
+  for (const [id, c] of Object.entries(db.clients)) {
+    const chat = c.chatId || c.tgChannel; if (!chat) continue;
+    try { const n = await tg('getChatMemberCount', { chat_id: chat }); c.memberCount = n; c.memberCountAt = Date.now(); } catch (e) {}
+  }
+  save();
+}
+setInterval(refreshMemberCounts, 10 * 60e3).unref();
 // bot ko client ke channel me admin verify karo + title le lo
 async function verifyChannel(chan) {
   if (DEMO) return { ok: false, title: '', error: 'DEMO मोड: bot token नहीं डाला' };
@@ -167,14 +187,43 @@ async function onJoinRequest(req) {
   const vid = name.startsWith('v_') ? name.slice(2) : null;
   const v = vid && db.visitors[vid];
   const S = settings();
-  if (S.autoApprove) { try { await tg('approveChatJoinRequest', { chat_id: req.chat.id, user_id: req.from.id }); } catch (e) { console.error('approve:', e.message); } }
-  if (!v) return;
-  if (S.welcome) tg('sendMessage', { chat_id: req.user_chat_id || req.from.id, text: S.welcome }).catch(() => {});
-  await markJoined(v, { id: req.from.id, username: req.from.username, name: [req.from.first_name, req.from.last_name].filter(Boolean).join(' ') });
+  const u = req.from;
+  const usr = { id: u.id, username: u.username, name: [u.first_name, u.last_name].filter(Boolean).join(' ') };
+  if (!v) {
+    // "Not our invite" — kis client ke channel me aaya, chat.id se match
+    const cid = Object.keys(db.clients).find((id) => String(db.clients[id].chatId) === String(req.chat.id));
+    if (cid) (db.otherJoins ||= {})[cid] = (db.otherJoins[cid] || 0) + 1;
+    if (S.autoApprove) { try { await tg('approveChatJoinRequest', { chat_id: req.chat.id, user_id: u.id }); } catch {} }
+    save(); return;
+  }
+  v.requestAt = v.requestAt || Date.now();
+  (db.pending ||= {})[String(u.id)] = { vid, chat: req.user_chat_id || u.id };
+  // Bot auto-approve ON ho to turant approve (manual ho to admin baad me Telegram se karega)
+  if (S.autoApprove) {
+    try { await tg('approveChatJoinRequest', { chat_id: req.chat.id, user_id: u.id }); v.approvedBy = 'bot'; } catch (e) { console.error('approve:', e.message); }
+    if (S.welcome) tg('sendMessage', { chat_id: req.user_chat_id || u.id, text: S.welcome }).catch(() => {});
+  }
+  // REQUEST aate hi Meta ko event bhejo — auto aur manual, dono me
+  await markJoined(v, usr);
+  save();
 }
 function onMemberChange(m) {
-  const vid = db.tgUsers[m.new_chat_member.user.id]; const v = vid && db.visitors[vid];
-  if (v && ['left', 'kicked'].includes(m.new_chat_member.status) && v.joinedAt && !v.leftAt) { v.leftAt = Date.now(); save(); }
+  const user = m.new_chat_member.user, status = m.new_chat_member.status;
+  // user asli me channel ka member ban gaya (approve hone par) -> tabhi Meta event
+  if (['member', 'administrator', 'creator'].includes(status)) {
+    const p = db.pending && db.pending[String(user.id)];
+    if (p) {
+      const v = db.visitors[p.vid];
+      if (v) {
+        if (!v.approvedBy) v.approvedBy = 'you';   // manual approve (admin ne khud kiya)
+        v.memberConfirmed = true; v.confirmedAt = v.confirmedAt || Date.now();
+        if (!v.joinedAt) { if (settings().welcome) tg('sendMessage', { chat_id: p.chat || user.id, text: settings().welcome }).catch(() => {}); markJoined(v, { id: user.id, username: user.username, name: [user.first_name, user.last_name].filter(Boolean).join(' ') }); }
+      }
+      delete db.pending[String(user.id)]; save();
+    }
+  }
+  const vid = db.tgUsers[user.id]; const v2 = vid && db.visitors[vid];
+  if (v2 && ['left', 'kicked'].includes(status) && v2.joinedAt && !v2.leftAt) { v2.leftAt = Date.now(); save(); }
 }
 // Bot ko jab kisi channel me admin banaya/hataया jaata hai — us channel ko yaad rakho
 function onMyChatMember(m) {
@@ -187,7 +236,9 @@ function onMyChatMember(m) {
 async function markJoined(v, user) {
   if (v.joinedAt) return;
   if (db.tgUsers[user.id] && db.tgUsers[user.id] !== v.id) { v.duplicateOf = db.tgUsers[user.id]; save(); return; }
-  v.joinedAt = Date.now(); v.tgUser = user; db.tgUsers[user.id] = v.id; save();
+  v.joinedAt = Date.now(); v.tgUser = user; db.tgUsers[user.id] = v.id;
+  if (db.pending) delete db.pending[String(user.id)];
+  save();
   const client = db.clients[v.clientId];
   if (client) await sendMetaEvent(v, client);
 }
@@ -236,6 +287,71 @@ function aggFor(clientId) {
     .map((v) => ({ t: v.joinedAt, result: 'real', source: normSource(v.source), reason: (v.tgUser?.username ? '@' + v.tgUser.username : 'verified') + (v.meta === 'sent' ? ' • Meta ✓' : '') }));
   return a;
 }
+const DAY = 24 * 3600e3;
+// Poora master analytics — platform, placements, telegram members, CAPI, traffic
+function richStats(clientId) {
+  const list = Object.values(db.visitors).filter((v) => v.clientId === clientId);
+  const c = db.clients[clientId] || {};
+  const platform = {}; for (const s of SOURCES) platform[s] = { visits: 0, clicks: 0, joins: 0, pct: 0 };
+  const placeMap = {};
+  let visits = 0, clicks = 0, joins = 0, fromAds = 0, left = 0, stayed = 0, requests = 0, approvedYou = 0, approvedBot = 0, capiSent = 0, capiErr = 0, withFbc = 0;
+  const byDay = {}, ipCount = {};
+  for (const v of list) {
+    const s = normSource(v.source), paid = v.fbc ? 'paid' : 'organic';
+    visits++; platform[s].visits++;
+    if (v.ip) ipCount[v.ip] = (ipCount[v.ip] || 0) + 1;
+    if (v.fbc) withFbc++;
+    if (v.clickedAt) { clicks++; platform[s].clicks++; }
+    if (v.requestAt) requests++;
+    const pk = s + '|' + paid; (placeMap[pk] ||= { platform: s, placement: paid, visits: 0, clicks: 0, joins: 0 }); placeMap[pk].visits++;
+    if (v.clickedAt) placeMap[pk].clicks++;
+    if (v.joinedAt) {
+      joins++; platform[s].joins++; placeMap[pk].joins++;
+      if (v.fbc) fromAds++;
+      if (v.approvedBy === 'you') approvedYou++; else if (v.approvedBy === 'bot') approvedBot++;
+      if (v.meta === 'sent') capiSent++; else if (v.meta && String(v.meta).startsWith('error')) capiErr++;
+      if (v.leftAt) left++;
+      const stayMs = (v.leftAt || Date.now()) - (v.confirmedAt || v.joinedAt);
+      if (stayMs > DAY) stayed++;
+      const d = new Date(v.joinedAt).toISOString().slice(0, 10); (byDay[d] ||= { real: 0, fake: 0 }).real++;
+    } else if (v.bot || v.suspicious) {
+      const d = new Date(v.createdAt).toISOString().slice(0, 10); (byDay[d] ||= { real: 0, fake: 0 }).fake++;
+    }
+  }
+  const pct = (a, b) => (b ? Math.round(a / b * 100) : 0);
+  for (const s of SOURCES) platform[s].pct = pct(platform[s].joins, joins);
+  const pending = Object.values(db.pending || {}).filter((p) => { const v = db.visitors[p.vid]; return v && v.clientId === clientId; }).length;
+  const ips4 = Object.values(ipCount).filter((n) => n >= 4).length;
+  const fake = list.filter((v) => !v.joinedAt && (v.bot || v.suspicious)).length;
+  return {
+    total: clicks, real: joins, fake,
+    channel: { title: c.channelTitle || c.name, members: c.memberCount ?? null, membersAt: c.memberCountAt || null },
+    platform,
+    placements: Object.values(placeMap).sort((a, b) => b.joins - a.joins),
+    members: { joins, fromAds, left, stay24h: pct(stayed, joins), pending, requests, approvedYou, approvedBot, capiAtRequest: capiSent },
+    capi: { sent: capiSent, errors: capiErr, notOurInvite: (db.otherJoins || {})[clientId] || 0 },
+    traffic: { visitClickGap: pct(visits - clicks, visits), withFbclid: pct(withFbc, visits), ips4plus: ips4 },
+    bySource: { instagram: { real: platform.instagram.joins, fake: 0 }, facebook: { real: platform.facebook.joins, fake: 0 }, other: { real: platform.other.joins, fake: 0 } },
+    byDay, visits,
+  };
+}
+// Har subscriber ki A-Z detail
+function subscriberList(clientId) {
+  return Object.values(db.visitors).filter((v) => v.clientId === clientId && v.joinedAt)
+    .sort((a, b) => b.joinedAt - a.joinedAt).slice(0, 300)
+    .map((v) => {
+      const inChannel = !v.leftAt;
+      const stayMs = (v.leftAt || Date.now()) - (v.confirmedAt || v.joinedAt);
+      return {
+        username: v.tgUser?.username ? '@' + v.tgUser.username : 'Unknown',
+        name: v.tgUser?.name || '',
+        joinedAt: v.joinedAt, leftAt: v.leftAt || null, inChannel,
+        stayMin: Math.max(0, Math.round(stayMs / 60000)),
+        source: normSource(v.source), fromAd: !!v.fbc,
+        approvedBy: v.approvedBy || '-', meta: v.meta || '-',
+      };
+    });
+}
 function publicClients() { const out = {}; for (const [id, c] of Object.entries(db.clients)) out[id] = { name: c.name, pixel: c.pixel, join: `/?c=${id}` }; return out; }
 
 // ---------- HTTP ----------
@@ -264,7 +380,7 @@ const server = http.createServer(async (req, res) => {
         const sameIp = Object.values(db.visitors).filter((x) => x.ip === ip && x.createdAt > hourAgo).length;
         const fbclid = url.searchParams.get('fbclid');
         v = { id: newId(), clientId: cid, variant, createdAt: Date.now(), ip, ua, url: baseUrl(req) + req.url,
-          source: normSource(url.searchParams.get('utm_source')),
+          source: detectSource(url, req),
           fbc: c._fbc || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined), fbp: c._fbp,
           suspicious: sameIp >= 5 || undefined };
         db.visitors[v.id] = v; (db.variantShown[cid] ||= {})[variant] = ((db.variantShown[cid] || {})[variant] || 0) + 1; save();
@@ -328,9 +444,15 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/stats') {
       if (!okKey(url)) return json(res, 401, { error: 'unauthorized' });
       const cid = url.searchParams.get('clientId');
-      if (cid) { if (!db.clients[cid]) return json(res, 400, { error: 'unknown client' }); return json(res, 200, { clientId: cid, client: db.clients[cid], agg: aggFor(cid) }); }
+      if (cid) { if (!db.clients[cid]) return json(res, 400, { error: 'unknown client' }); return json(res, 200, { clientId: cid, client: db.clients[cid], agg: aggFor(cid), rich: richStats(cid) }); }
       const out = {}; for (const id of Object.keys(db.clients)) { const a = aggFor(id); out[id] = { name: db.clients[id].name, total: a.total, real: a.real, fake: a.fake }; }
       return json(res, 200, { clients: out, bot: BOT, demo: DEMO });
+    }
+    if (p === '/api/subscribers') {
+      if (!okKey(url)) return json(res, 401, { error: 'unauthorized' });
+      const cid = url.searchParams.get('clientId');
+      if (!cid || !db.clients[cid]) return json(res, 400, { error: 'unknown client' });
+      return json(res, 200, { subscribers: subscriberList(cid) });
     }
     if (p === '/api/channels') {
       if (!okKey(url)) return json(res, 401, { error: 'unauthorized' });
@@ -373,6 +495,7 @@ async function onListen() {
   if (DEMO) console.log('  ⚠ DEMO mode: .env me TELEGRAM_BOT_TOKEN daalo for real joins.');
   await checkBot();
   console.log(`  Telegram  : ${BOT.message}\n`);
+  refreshMemberCounts();
   pollTelegram();
 }
 boot();

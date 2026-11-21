@@ -94,7 +94,12 @@ input{font-family:inherit}
 
 /* ---------- layout rows ---------- */
 .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px}
-@media(max-width:980px){.grid2{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:980px){.grid2,.grid3{grid-template-columns:1fr}}
+.kvrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--mute)}
+.kvrow:last-child{border-bottom:0}
+.kvrow b{color:var(--text);font-variant-numeric:tabular-nums}
+.muted{color:var(--mute)}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
 .panel h3{font-size:13px;margin:0 0 18px;color:var(--mute);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
 
@@ -344,21 +349,12 @@ tr:last-child td{border-bottom:0}
   </div>
 </div>
 
-<!-- CLIENT DETAIL MODAL -->
+<!-- CLIENT DETAIL / MASTER PANEL -->
 <div class="ov" id="detailOv">
-  <div class="modal">
+  <div class="modal" style="max-width:1040px">
     <h3 class="mh"><span id="dTitle">Client</span><button id="detailClose">×</button></h3>
-    <div class="stats" id="dStats" style="margin-bottom:18px"></div>
-    <div class="panel" style="margin:0 0 16px;background:var(--bg2)">
-      <h3>Last 7 days</h3><div class="chart" id="dChart"></div>
-    </div>
-    <div class="panel" style="margin:0 0 16px;background:var(--bg2)">
-      <h3>By source</h3><div id="dSources"></div>
-      <div class="legend"><span><span style="width:11px;height:11px;border-radius:50%;background:var(--good)"></span>Real</span><span><span style="width:11px;height:11px;border-radius:50%;background:var(--bad)"></span>Fake</span></div>
-    </div>
-    <div class="panel" style="margin:0;background:var(--bg2)">
-      <h3>Recent activity</h3><div id="dRecent"></div>
-    </div>
+    <button class="btnlink" id="dRefresh" style="margin-bottom:12px">↻ Refresh</button>
+    <div id="dBody"><p class="muted">Loading…</p></div>
   </div>
 </div>
 
@@ -565,33 +561,49 @@ tr:last-child td{border-bottom:0}
     catch(e){ toast('Delete failed',true); } }
 
   // ---------- detail ----------
+  let dCurrent=null;
   async function openDetail(id){
-    $('detailOv').classList.add('show'); $('dTitle').textContent='Loading…';
-    $('dStats').innerHTML=''; $('dChart').innerHTML=''; $('dSources').innerHTML=''; $('dRecent').innerHTML='';
-    let data; try{ data=await (await api('/api/stats?clientId='+encodeURIComponent(id))).json(); }catch(e){ toast('Load failed',true); return; }
-    const a=data.agg, c=data.client; $('dTitle').textContent=(c?.name||id);
-    const pct=a.total?Math.round(a.real/a.total*100):0;
-    $('dStats').innerHTML=statCard('Total',a.total,'','🖱️')+statCard('Real',a.real,'good','✅')+statCard('Fake',a.fake,'bad','🤖')+statCard('Real %',pct+'%','brand','📈');
+    dCurrent=id; $('detailOv').classList.add('show'); $('dTitle').textContent='Loading…'; $('dBody').innerHTML='<p class="muted">Loading…</p>';
+    let data, subs=[];
+    try{ data=await (await api('/api/stats?clientId='+encodeURIComponent(id))).json(); }catch(e){ toast('Load failed',true); return; }
+    try{ subs=(await (await api('/api/subscribers?clientId='+encodeURIComponent(id))).json()).subscribers||[]; }catch(e){}
+    const r=data.rich, c=data.client; $('dTitle').textContent=(c?.name||id);
+    const SN={instagram:'Instagram',facebook:'Facebook',other:'Other'}, SC={instagram:'#ff7bb0',facebook:'#79b0ff',other:'#b6afda'};
+    const st=(k,v,cls,ic,glow)=>statCard(k,v,cls,ic,glow);
+    let h='<div class="stats" style="margin-bottom:16px">'+
+      st('Channel members', r.channel.members!=null?r.channel.members:'—','','👥')+
+      st('Total joins', r.members.joins,'good','✅')+
+      st('In channel', Math.max(0,r.members.joins-r.members.left),'brand','📥')+
+      st('Left', r.members.left,'bad','📤')+
+      st('Pending', r.members.pending,'','⏳')+'</div>';
+    // Platform + Placements
+    h+='<div class="grid2" style="margin-bottom:16px"><div class="panel"><h3>Platform (kahan se aaya)</h3>';
+    for(const s of ['instagram','facebook','other']){ const p=r.platform[s];
+      h+=`<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="color:${SC[s]}">${SN[s]}</b><span class="muted">${p.pct}% of joins</span></div>
+        <div class="prog" style="height:8px"><i style="width:${p.pct}%;background:${SC[s]}"></i></div>
+        <div class="muted" style="font-size:12px;margin-top:5px">Visits ${num(p.visits)} · Clicks ${num(p.clicks)} · Joins ${num(p.joins)}</div></div>`; }
+    h+='</div><div class="panel"><h3>Placements</h3><table><thead><tr><th>Platform</th><th>Type</th><th>Visits</th><th>Clicks</th><th>Joins</th></tr></thead><tbody>'+
+      (r.placements.map(pl=>`<tr><td>${SN[pl.platform]||pl.platform}</td><td><span class="tag ${pl.placement==='paid'?'real':'fake'}">${pl.placement}</span></td><td>${num(pl.visits)}</td><td>${num(pl.clicks)}</td><td>${num(pl.joins)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No data</td></tr>')+
+      '</tbody></table></div></div>';
+    // Members + CAPI + Traffic
+    const kv=(k,v,col)=>`<div class="kvrow"><span>${k}</span><b style="${col?('color:'+col):''}">${v}</b></div>`;
+    h+='<div class="grid3" style="margin-bottom:16px"><div class="panel"><h3>Telegram members</h3>'+
+      kv('Joins',num(r.members.joins))+kv('From our ads',num(r.members.fromAds))+kv('Left',num(r.members.left),'var(--bad)')+kv('24h stay',r.members.stay24h+'%')+kv('Pending',num(r.members.pending),'var(--warn)')+kv('Join requests',num(r.members.requests))+kv('Approved by you',num(r.members.approvedYou))+kv('Approved by bot',num(r.members.approvedBot))+kv('CAPI at request',num(r.members.capiAtRequest))+'</div>'+
+      '<div class="panel"><h3>CAPI (Meta)</h3>'+kv('Sent',num(r.capi.sent),'var(--good)')+kv('Errors',num(r.capi.errors),r.capi.errors?'var(--bad)':'var(--good)')+kv('Not our invite',num(r.capi.notOurInvite))+'</div>'+
+      '<div class="panel"><h3>Traffic quality</h3>'+kv('Visit→click gap',r.traffic.visitClickGap+'%')+kv('With fbclid',r.traffic.withFbclid+'%')+kv('IPs with 4+ visits',num(r.traffic.ips4plus))+'</div></div>';
     // 7-day chart
-    const days=[]; for(let i=6;i>=0;i--){ const d=new Date(Date.now()-i*864e5).toISOString().slice(0,10); days.push(d); }
-    const dmax=Math.max(1,...days.map(d=>{ const x=a.byDay[d]||{real:0,fake:0}; return x.real+x.fake; }));
-    $('dChart').innerHTML=days.map(d=>{ const x=a.byDay[d]||{real:0,fake:0};
-      const rh=x.real/dmax*100, fh=x.fake/dmax*100;
-      return `<div class="col"><div class="bars">
-        <i style="height:${rh}%;background:var(--good)" title="${x.real} real"></i>
-        <i style="height:${fh}%;background:var(--bad)" title="${x.fake} fake"></i></div>
-        <div class="day">${d.slice(5)}</div></div>`; }).join('');
-    // sources
-    const sn={instagram:'Instagram',facebook:'Facebook',other:'Other'}, col={instagram:'#e1306c',facebook:'#1877f2',other:'#8b93c0'};
-    $('dSources').innerHTML=Object.keys(a.bySource).map(s=>{ const d=a.bySource[s],t=d.real+d.fake,rp=t?d.real/t*100:0,fp=t?d.fake/t*100:0;
-      return `<div class="srow"><span class="dot" style="background:${col[s]}"></span><span class="name">${sn[s]||s}</span>
-        <span class="barwrap"><i style="width:${rp}%;background:var(--good)"></i><i style="width:${fp}%;background:var(--bad)"></i></span>
-        <span class="nums">${num(d.real)} real / ${num(d.fake)} fake</span></div>`; }).join('');
-    // recent
-    if(!a.recent||!a.recent.length) $('dRecent').innerHTML='<p style="color:var(--mute);font-size:13px">No activity yet.</p>';
-    else $('dRecent').innerHTML=`<table><thead><tr><th>Time</th><th>Result</th><th>Source</th><th>Reason</th></tr></thead><tbody>`+
-      a.recent.map(r=>{const sn={instagram:'Instagram',facebook:'Facebook',other:'Other'}[r.source]||r.source;return `<tr><td>${new Date(r.t).toLocaleString()}</td><td><span class="tag ${r.result}">${r.result==='real'?'joined':r.result}</span></td><td><span class="src ${r.source}">${sn}</span></td><td style="color:var(--mute)">${esc(r.reason||'-')}</td></tr>`;}).join('')+`</tbody></table>`;
+    const days=[]; for(let i=6;i>=0;i--) days.push(new Date(Date.now()-i*864e5).toISOString().slice(0,10));
+    const dmax=Math.max(1,...days.map(d=>{const x=r.byDay[d]||{real:0,fake:0};return x.real+x.fake;}));
+    h+='<div class="panel" style="margin-bottom:16px"><h3>Last 7 days (joins)</h3><div class="chart">'+days.map(d=>{const x=r.byDay[d]||{real:0,fake:0};return `<div class="col"><div class="bars"><i style="height:${x.real/dmax*100}%;background:var(--good)"></i><i style="height:${x.fake/dmax*100}%;background:var(--bad)"></i></div><div class="day">${d.slice(5)}</div></div>`;}).join('')+'</div></div>';
+    // Subscribers A-Z
+    h+='<div class="panel"><h3>Subscribers — A to Z ('+subs.length+')</h3>';
+    if(!subs.length) h+='<p class="muted">Abhi koi subscriber nahi.</p>';
+    else h+='<div style="overflow:auto;max-height:420px"><table><thead><tr><th>Username</th><th>Source</th><th>Ad</th><th>Joined</th><th>Status</th><th>Stay</th><th>Approve</th></tr></thead><tbody>'+
+      subs.map(x=>`<tr><td><b>${esc(x.username)}</b></td><td><span class="src ${x.source}">${SN[x.source]||x.source}</span></td><td>${x.fromAd?'✅':'—'}</td><td>${new Date(x.joinedAt).toLocaleString()}</td><td>${x.inChannel?'<span class="tag real">In channel</span>':'<span class="tag fake">Exited</span>'}</td><td>${x.stayMin>=60?Math.round(x.stayMin/60)+'h':x.stayMin+'m'}</td><td class="muted">${x.approvedBy}</td></tr>`).join('')+'</tbody></table></div>';
+    h+='</div>';
+    $('dBody').innerHTML=h;
   }
+  $('dRefresh').onclick=()=>{ if(dCurrent) openDetail(dCurrent); };
   $('detailClose').onclick=()=>$('detailOv').classList.remove('show');
   $('detailOv').onclick=e=>{ if(e.target.id==='detailOv') $('detailOv').classList.remove('show'); };
 
