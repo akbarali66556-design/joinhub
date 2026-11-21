@@ -322,6 +322,17 @@ tr:last-child td{border-bottom:0}
       <div class="hint">Isi se server real join Meta ko confirm bhejta hai. Events Manager → Settings → Conversions API se milta hai.</div>
     </div>
     <div style="margin-top:16px">
+      <label class="lbl">Meta event (join par kya bheje)</label>
+      <select class="field" id="fEvent">
+        <option value="Lead">Lead (default)</option>
+        <option value="Subscribe">Subscribe</option>
+        <option value="CompleteRegistration">CompleteRegistration</option>
+        <option value="Contact">Contact</option>
+        <option value="StartTrial">StartTrial</option>
+      </select>
+      <div class="hint">Jo yahan chunoge, <b>wahi</b> ad ke "Conversion event" me select karna hoga. Channel join ke liye Subscribe ya Lead aam hai.</div>
+    </div>
+    <div style="margin-top:16px">
       <label class="lbl">Test Event Code <span style="color:var(--dim)">(optional)</span></label>
       <input class="field" id="fTest" placeholder="TEST12345 — testing ke liye">
       <div class="hint">Testing ke time daalo, Events Manager → Test Events me live dikhega. Live par khali kar do.</div>
@@ -527,7 +538,7 @@ tr:last-child td{border-bottom:0}
   }
   function openEdit(id,c){ editingId=id; $('editTitle').textContent=id?'Edit client':'Add client';
     $('fName').value=c?.name||''; $('fChannel').value=c?.tgChannel||''; $('fPixel').value=c?.pixel||'';
-    $('fToken').value=c?.metaToken||''; $('fTest').value=c?.metaTestCode||'';
+    $('fToken').value=c?.metaToken||''; $('fTest').value=c?.metaTestCode||''; $('fEvent').value=c?.metaEvent||'Lead';
     fillChannels(c?.tgChannel||'');
     $('editOv').classList.add('show'); setTimeout(()=>$('fName').focus(),50); }
   $('fChannelSelect').onchange=()=>{ const v=$('fChannelSelect').value; if(v&&v!=='__manual') $('fChannel').value=v; if(v==='__manual'){ $('fChannel').focus(); } };
@@ -537,7 +548,7 @@ tr:last-child td{border-bottom:0}
   $('editSave').onclick=async()=>{
     const name=$('fName').value.trim(); if(!name){ toast('Client name zaroori hai',true); return; }
     const body={name,pixel:$('fPixel').value.trim(),metaToken:$('fToken').value.trim(),
-      tgChannel:$('fChannel').value.trim(),metaTestCode:$('fTest').value.trim()}; if(editingId) body.id=editingId;
+      tgChannel:$('fChannel').value.trim(),metaTestCode:$('fTest').value.trim(),metaEvent:$('fEvent').value}; if(editingId) body.id=editingId;
     $('editSave').disabled=true; $('editSave').textContent='Saving…';
     try{ const res=await api('/api/clients',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
       const out=await res.json().catch(()=>({}));
