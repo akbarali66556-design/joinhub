@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070b16">
+<title>Join Tracker — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08080c;--bg2:#101016;--card:#16161f;--card2:#1e1e2a;--line:#2a2a37;--line2:#3b3b4e;
+  --text:#f6f4ef;--mute:#b7b2c2;--dim:#7d7991;
+  --brand:#e7cd84;--brand2:#b8902f;--good:#2ec79a;--bad:#ff5d7d;--warn:#f0b45a;
+  --gold:#e7cd84;--gold2:#c8a24b;
+  --ig:#e1306c;--fb:#1877f2;
+  --grad:linear-gradient(135deg,#f0da97,#c8a24b);
+  --btxt:#241a05;
+  --shadow:0 22px 60px rgba(0,0,0,.55);
+  --display:'Playfair Display',Georgia,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:
+  radial-gradient(90% 55% at 50% -8%,rgba(231,205,132,.09),transparent 60%),
+  radial-gradient(70% 45% at 100% 0%,rgba(184,144,47,.06),transparent 55%),
+  var(--bg)}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+
+/* ---------- login ---------- */
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(130% 90% at 50% -10%,#1c1710 0%,#08080c 62%)}
+.loginbox{width:100%;max-width:410px;background:linear-gradient(180deg,#191922,#141019);
+  border:1px solid var(--line);border-radius:24px;padding:40px 32px;text-align:center;box-shadow:var(--shadow);position:relative}
+.loginbox::before{content:"";position:absolute;inset:0;border-radius:24px;padding:1px;
+  background:linear-gradient(160deg,rgba(231,205,132,.5),transparent 40%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.brandmark{width:70px;height:70px;border-radius:20px;margin:0 auto 18px;background:var(--grad);
+  display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 12px 34px rgba(231,205,132,.35)}
+.loginbox h1{font-family:var(--display);font-size:28px;margin:0 0 6px;font-weight:800;letter-spacing:0;color:var(--gold)}
+.loginbox p{color:var(--mute);font-size:14px;margin:0 0 24px}
+.field{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--text);
+  border-radius:12px;padding:14px 16px;font-size:15px;outline:none;transition:border-color .15s}
+.field:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(75,123,255,.15)}
+.primary{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--grad);
+  color:var(--btxt);font-weight:800;font-size:15px;box-shadow:0 10px 26px rgba(231,205,132,.28)}
+.primary:hover{filter:brightness(1.07)}
+.err{color:var(--bad);font-size:13px;margin-top:12px;min-height:16px}
+
+/* ---------- app shell ---------- */
+#app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+.side{background:linear-gradient(180deg,#0c1324,#0a0f1d);border-right:1px solid var(--line);
+  padding:22px 16px;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;height:100vh}
+.side .logo{display:flex;align-items:center;gap:12px;padding:6px 10px 22px;font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:0}
+.side .logo .m{width:36px;height:36px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:19px}
+.navlabel{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;padding:8px 12px 6px;font-weight:700}
+.nav{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;color:var(--mute);
+  font-weight:600;font-size:14.5px;border:0;background:none;width:100%;text-align:left;transition:.12s}
+.nav:hover{background:var(--card);color:var(--text)}
+.nav.active{background:var(--card2);color:var(--text);box-shadow:inset 3px 0 0 var(--gold),inset 0 0 0 1px var(--line2)}
+.nav.active .ic{filter:drop-shadow(0 0 6px rgba(231,205,132,.5))}
+.nav .ic{width:20px;text-align:center;font-size:16px}
+.side .spacer{flex:1}
+.logout{color:var(--dim);font-size:13.5px;background:none;border:0;text-align:left;padding:12px 14px;border-radius:10px}
+.logout:hover{background:var(--card);color:var(--bad)}
+
+.main{padding:34px 40px;overflow:auto;max-width:1280px;width:100%}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;gap:14px;flex-wrap:wrap}
+.page-head h2{font-family:var(--display);font-size:33px;margin:0;font-weight:800;letter-spacing:0}
+.page-head .sub{color:var(--mute);font-size:14px;margin-top:5px}
+.btnlink{color:var(--mute);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-weight:600;font-size:13.5px}
+.btnlink:hover{color:var(--text);border-color:var(--line2)}
+.btn-primary{border:0;border-radius:12px;background:var(--grad);color:var(--btxt);font-weight:800;font-size:14.5px;padding:12px 22px;box-shadow:0 10px 26px rgba(231,205,132,.28)}
+.btn-primary:hover{filter:brightness(1.07)}
+
+/* ---------- stat cards ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:var(--glow,rgba(231,205,132,.08))}
+.stat .k{font-size:12.5px;color:var(--mute);font-weight:600;display:flex;align-items:center;gap:9px}
+.stat .ic{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;background:var(--card2)}
+.stat .v{font-size:36px;font-weight:900;font-variant-numeric:tabular-nums;margin-top:12px;letter-spacing:-1px}
+.stat .v.good{color:var(--good)}.stat .v.bad{color:var(--bad)}.stat .v.brand{color:var(--gold)}
+.stat .sub{font-size:12px;color:var(--dim);margin-top:4px}
+
+/* ---------- layout rows ---------- */
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:980px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+.panel h3{font-size:13px;margin:0 0 18px;color:var(--mute);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
+
+/* donut */
+.donutwrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center}
+.donut{position:relative;width:150px;height:150px;flex:none}
+.donut .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut .mid .big{font-size:30px;font-weight:900;letter-spacing:-1px}
+.donut .mid .lbl{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.6px}
+.dlegend{display:flex;flex-direction:column;gap:10px}
+.dlegend .it{display:flex;align-items:center;gap:10px;font-size:13.5px}
+.dlegend .sw{width:12px;height:12px;border-radius:4px}
+.dlegend b{font-variant-numeric:tabular-nums}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:13px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+tr:last-child td{border-bottom:0}
+.who{display:flex;align-items:center;gap:11px}
+.avatar{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff}
+.who .nm{font-weight:700}.who .id{color:var(--dim);font-size:12px;font-family:ui-monospace,monospace}
+.prog{height:7px;border-radius:4px;background:var(--bg2);overflow:hidden;min-width:90px}
+.prog i{display:block;height:100%}
+.pcttag{font-weight:800;font-variant-numeric:tabular-nums}
+.link{color:#9db6ff;cursor:pointer;background:none;border:0;font-weight:700;font-size:13px}
+.link:hover{text-decoration:underline}
+
+/* ---------- client cards ---------- */
+.clist{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.ccard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:15px;transition:.15s}
+.ccard:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.ccard .top{display:flex;align-items:center;gap:12px}
+.ccard .nm{font-weight:800;font-size:17px}
+.ccard .id{color:var(--dim);font-size:12px;font-family:ui-monospace,monospace}
+.pill{font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;margin-left:auto}
+.pill.on{background:rgba(31,217,154,.15);color:var(--good)}
+.pill.off{background:rgba(255,176,32,.15);color:var(--warn)}
+.ccard .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+.ccard .mini div{background:var(--bg2);border-radius:12px;padding:12px 6px}
+.ccard .mini span{font-size:11px;color:var(--mute);display:block}
+.ccard .mini b{display:block;font-size:22px;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-.5px}
+.urlrow{display:flex;gap:7px;align-items:center;background:var(--bg2);border:1px solid var(--line2);border-radius:11px;padding:8px 8px 8px 12px}
+.urlrow code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--mute)}
+.ibtn{border:0;background:var(--card2);color:var(--text);border-radius:8px;padding:7px 11px;font-size:12px;font-weight:800}
+.ibtn.ig{background:rgba(225,48,108,.18);color:#ff78ab}
+.ibtn.fb{background:rgba(24,119,242,.18);color:#7db0ff}
+.ibtn:hover{filter:brightness(1.15)}
+.ccard .acts{display:flex;gap:9px}
+.ccard .acts button{flex:1;border:1px solid var(--line2);background:var(--card2);color:var(--text);border-radius:11px;padding:11px;font-weight:700;font-size:13.5px}
+.ccard .acts button:hover{filter:brightness(1.15)}
+.ccard .acts .del{color:#ff85a0;border-color:rgba(255,93,125,.3);flex:none;padding:11px 14px}
+
+/* ---------- form ---------- */
+.lbl{font-size:12.5px;color:var(--mute);margin-bottom:7px;display:block;font-weight:600}
+.hint{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.4}
+
+/* 7-day chart */
+.chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:10px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.chart .bars{width:100%;display:flex;gap:3px;align-items:flex-end;height:100%;justify-content:center}
+.chart .bars i{width:40%;border-radius:4px 4px 0 0;min-height:2px}
+.chart .day{font-size:10.5px;color:var(--dim)}
+
+/* source bars */
+.srow{display:flex;align-items:center;gap:14px;margin:12px 0}
+.srow .dot{width:11px;height:11px;border-radius:50%}
+.srow .name{width:92px;font-weight:700;font-size:14px}
+.barwrap{flex:1;height:24px;background:var(--bg2);border-radius:7px;overflow:hidden;display:flex}
+.barwrap i{height:100%}
+.srow .nums{width:150px;text-align:right;font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
+.tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800}
+.tag.real{background:rgba(31,217,154,.16);color:var(--good)}
+.tag.fake{background:rgba(255,93,125,.16);color:var(--bad)}
+.legend{display:flex;gap:18px;font-size:12.5px;color:var(--mute);margin-top:10px}
+.legend span{display:flex;align-items:center;gap:7px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(4,7,14,.78);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+.ov.show{display:flex}
+.modal{width:100%;max-width:640px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:var(--shadow)}
+.modal h3.mh{margin:0 0 20px;font-family:var(--display);font-size:24px;display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--gold)}
+.modal h3.mh button{background:none;border:0;color:var(--mute);font-size:26px;line-height:1}
+.row2{display:flex;gap:12px;margin-top:20px}
+.row2 button{flex:1;padding:14px;border-radius:12px;font-weight:800;font-size:14.5px}
+.save{background:var(--grad);color:var(--btxt);border:0}
+.cancel{background:var(--card2);color:var(--text);border:1px solid var(--line2)}
+
+.empty{text-align:center;color:var(--mute);padding:54px 20px}
+.empty .big{font-size:46px;margin-bottom:12px}
+
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--good);
+  color:#042a1c;font-weight:800;padding:13px 22px;border-radius:999px;transition:transform .25s;z-index:60;box-shadow:var(--shadow)}
+#toast.bad{background:var(--bad);color:#fff}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:820px){
+  #app{grid-template-columns:1fr}
+  .side{flex-direction:row;overflow:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px;position:static;height:auto;align-items:center}
+  .side .logo{display:none}.side .spacer{display:none}.navlabel{display:none}
+  .nav{width:auto;white-space:nowrap;padding:10px 14px}
+  .main{padding:20px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="loginbox">
+    <div class="brandmark">🎯</div>
+    <h1>Join Tracker</h1>
+    <p>Sign in to your admin dashboard</p>
+    <input class="field" id="loginKey" type="password" placeholder="Dashboard key" autocomplete="off">
+    <button class="primary" id="loginBtn">Sign in →</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <aside class="side">
+    <div class="logo"><span class="m">🎯</span> Join Tracker</div>
+    <div class="navlabel">Menu</div>
+    <button class="nav active" data-tab="overview"><span class="ic">📊</span> Overview</button>
+    <button class="nav" data-tab="clients"><span class="ic">👥</span> Clients</button>
+    <div class="spacer"></div>
+    <button class="logout" id="logout">⎋ Sign out</button>
+  </aside>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section id="tab-overview">
+      <div class="page-head">
+        <div><h2>Overview</h2><div class="sub">All clients combined — real vs fake performance</div></div>
+        <button class="btnlink" id="refreshOv">↻ Refresh</button>
+      </div>
+      <div id="botBanner"></div>
+      <div class="stats" id="ovStats"></div>
+      <div class="grid2">
+        <div class="panel"><h3>Clients performance</h3><div id="ovTable"></div></div>
+        <div class="panel"><h3>Real vs Fake</h3><div id="ovDonut"></div></div>
+      </div>
+    </section>
+
+    <!-- CLIENTS -->
+    <section id="tab-clients" class="hidden">
+      <div class="page-head">
+        <div><h2>Clients</h2><div class="sub">Add a client and tracking starts instantly</div></div>
+        <button class="btn-primary" id="addBtn">+ Add client</button>
+      </div>
+      <div id="clientList"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="ov" id="editOv">
+  <div class="modal">
+    <h3 class="mh"><span id="editTitle">Add client</span><button id="editClose">×</button></h3>
+    <div>
+      <label class="lbl">Client name</label>
+      <input class="field" id="fName" placeholder="e.g. Rahul Fitness">
+    </div>
+    <div style="margin-top:16px">
+      <label class="lbl">Telegram channel (bot must be admin)</label>
+      <input class="field" id="fChannel" placeholder="@channelusername  ya  -1001234567890">
+      <div class="hint">Jahan log join karenge. Aapka bot is channel me <b>admin</b> hona chahiye ("Invite via link" permission ke saath). Join yahin confirm hoga.</div>
+    </div>
+    <div style="margin-top:16px">
+      <label class="lbl">Meta Pixel ID</label>
+      <input class="field" id="fPixel" placeholder="e.g. 1234567890123456" inputmode="numeric">
+      <div class="hint">Us client ke ad account ka Pixel ID.</div>
+    </div>
+    <div style="margin-top:16px">
+      <label class="lbl">Meta Access Token (Conversions API)</label>
+      <input class="field" id="fToken" placeholder="EAAB... (CAPI token)">
+      <div class="hint">Isi se server real join Meta ko confirm bhejta hai. Events Manager → Settings → Conversions API se milta hai.</div>
+    </div>
+    <div style="margin-top:16px">
+      <label class="lbl">Test Event Code <span style="color:var(--dim)">(optional)</span></label>
+      <input class="field" id="fTest" placeholder="TEST12345 — testing ke liye">
+      <div class="hint">Testing ke time daalo, Events Manager → Test Events me live dikhega. Live par khali kar do.</div>
+    </div>
+    <div class="row2">
+      <button class="cancel" id="editCancel">Cancel</button>
+      <button class="save" id="editSave">Save client</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT DETAIL MODAL -->
+<div class="ov" id="detailOv">
+  <div class="modal">
+    <h3 class="mh"><span id="dTitle">Client</span><button id="detailClose">×</button></h3>
+    <div class="stats" id="dStats" style="margin-bottom:18px"></div>
+    <div class="panel" style="margin:0 0 16px;background:var(--bg2)">
+      <h3>Last 7 days</h3><div class="chart" id="dChart"></div>
+    </div>
+    <div class="panel" style="margin:0 0 16px;background:var(--bg2)">
+      <h3>By source</h3><div id="dSources"></div>
+      <div class="legend"><span><span style="width:11px;height:11px;border-radius:50%;background:var(--good)"></span>Real</span><span><span style="width:11px;height:11px;border-radius:50%;background:var(--bad)"></span>Fake</span></div>
+    </div>
+    <div class="panel" style="margin:0;background:var(--bg2)">
+      <h3>Recent activity</h3><div id="dRecent"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const num = n => (n || 0).toLocaleString();
+  const origin = location.origin && location.origin !== 'null' ? location.origin : 'https://your-site.netlify.app';
+  const AV = ['#4b7bff','#8a5cff','#1fd99a','#ff8a3d','#ff5d7d','#20c5e0','#f7c948','#b06bff'];
+  const avColor = s => AV[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0) % AV.length];
+  const initials = n => String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  let KEY = '', editingId = null;
+  try { KEY = localStorage.getItem('jt_key') || ''; } catch (e) {}
+
+  function toast(msg, bad){ const t=$('toast'); t.textContent=msg; t.classList.toggle('bad',!!bad); t.classList.add('show'); clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('show'),2200); }
+  async function api(path, opts){ const sep=path.includes('?')?'&':'?'; const res=await fetch(path+sep+'key='+encodeURIComponent(KEY),opts); if(res.status===401) throw{unauth:true}; return res; }
+  function esc(s){ return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+  // ---------- auth ----------
+  async function tryLogin(key){ KEY=key; const res=await fetch('/api/stats?key='+encodeURIComponent(key)); if(res.status===401||!res.ok) return false; try{localStorage.setItem('jt_key',key);}catch(e){} return true; }
+  $('loginBtn').onclick = async () => {
+    const k=$('loginKey').value.trim(); $('loginErr').textContent='';
+    if(!k){ $('loginErr').textContent='Enter the key.'; return; }
+    try{ if(await tryLogin(k)) showApp(); else $('loginErr').textContent='Wrong key.'; }
+    catch(e){ $('loginErr').textContent='Network error.'; }
+  };
+  $('loginKey').addEventListener('keydown',e=>{ if(e.key==='Enter') $('loginBtn').click(); });
+  $('logout').onclick=()=>{ try{localStorage.removeItem('jt_key');}catch(e){} location.reload(); };
+  function showApp(){ $('login').classList.add('hidden'); $('app').classList.remove('hidden'); loadOverview(); loadClients(); }
+
+  // ---------- tabs ----------
+  document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active')); b.classList.add('active');
+    const t=b.dataset.tab;
+    $('tab-overview').classList.toggle('hidden',t!=='overview');
+    $('tab-clients').classList.toggle('hidden',t!=='clients');
+    if(t==='overview') loadOverview(); if(t==='clients') loadClients();
+  });
+
+  function statCard(k,v,cls,icon,glow,sub){
+    return `<div class="stat" style="--glow:${glow||'rgba(75,123,255,.08)'}">
+      <div class="k"><span class="ic">${icon}</span>${k}</div>
+      <div class="v ${cls||''}">${typeof v==='number'?num(v):v}</div>
+      ${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+  }
+
+  function donut(real,fake){
+    const tot=real+fake, pct=tot?real/tot:0, C=2*Math.PI*52, off=C*(1-pct);
+    const rp=tot?Math.round(real/tot*100):0;
+    return `<div class="donutwrap">
+      <div class="donut">
+        <svg width="150" height="150" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--bad)" stroke-width="16"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--good)" stroke-width="16"
+            stroke-dasharray="${C}" stroke-dashoffset="${off}" stroke-linecap="round" transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="mid"><div class="big">${rp}%</div><div class="lbl">Real</div></div>
+      </div>
+      <div class="dlegend">
+        <div class="it"><span class="sw" style="background:var(--good)"></span>Real <b style="margin-left:auto">${num(real)}</b></div>
+        <div class="it"><span class="sw" style="background:var(--bad)"></span>Fake <b style="margin-left:auto">${num(fake)}</b></div>
+        <div class="it"><span class="sw" style="background:var(--line2)"></span>Total <b style="margin-left:auto">${num(tot)}</b></div>
+      </div></div>`;
+  }
+
+  // ---------- overview ----------
+  async function loadOverview(){
+    let data; try{ data=await (await api('/api/stats')).json(); }catch(e){ if(e.unauth) return location.reload(); return; }
+    const clients=data.clients||{};
+    const bb=$('botBanner');
+    if(data.demo) bb.innerHTML='<div style="background:rgba(240,180,90,.12);border:1px solid rgba(240,180,90,.35);color:#f0b45a;padding:12px 16px;border-radius:12px;margin-bottom:18px;font-size:13.5px">⚠ <b>DEMO mode</b> — TELEGRAM_BOT_TOKEN set nahi hai. Join simulate hota hai; real Telegram verify ke liye token daalo.</div>';
+    else if(data.bot&&data.bot.ok) bb.innerHTML='<div style="background:rgba(46,199,154,.12);border:1px solid rgba(46,199,154,.3);color:#2ec79a;padding:12px 16px;border-radius:12px;margin-bottom:18px;font-size:13.5px">✓ Telegram bot connected: <b>@'+esc(data.bot.username||'')+'</b></div>';
+    else if(data.bot) bb.innerHTML='<div style="background:rgba(255,93,125,.12);border:1px solid rgba(255,93,125,.3);color:#ff5d7d;padding:12px 16px;border-radius:12px;margin-bottom:18px;font-size:13.5px">✕ Telegram bot problem: '+esc(data.bot.message||'')+'</div>';
+    else bb.innerHTML='';
+    let total=0,real=0,fake=0,n=0;
+    for(const id in clients){ total+=clients[id].total; real+=clients[id].real; fake+=clients[id].fake; n++; }
+    const pct=total?Math.round(real/total*100):0;
+    $('ovStats').innerHTML=
+      statCard('Active clients',n,'','👥','rgba(75,123,255,.1)')+
+      statCard('Total clicks',total,'','🖱️','rgba(138,92,255,.1)')+
+      statCard('Real joins',real,'good','✅','rgba(31,217,154,.1)',pct+'% of clicks')+
+      statCard('Fake / bot',fake,'bad','🤖','rgba(255,93,125,.1)',(total?100-pct:0)+'% blocked')+
+      statCard('Real rate',pct+'%','brand','📈','rgba(75,123,255,.1)');
+    $('ovDonut').innerHTML = total ? donut(real,fake) : `<div class="empty"><div class="big">🍩</div>No data yet.</div>`;
+    if(!n){ $('ovTable').innerHTML=emptyBox('No clients yet','Add a client from the Clients tab.'); return; }
+    const rows=Object.entries(clients).map(([id,c])=>{
+      const p=c.total?Math.round(c.real/c.total*100):0;
+      const col=p>=70?'var(--good)':p>=40?'var(--warn)':'var(--bad)';
+      return `<tr>
+        <td><div class="who"><div class="avatar" style="background:${avColor(id)}">${initials(c.name||id)}</div>
+          <div><div class="nm">${esc(c.name||id)}</div><div class="id">${id}</div></div></div></td>
+        <td>${num(c.total)}</td>
+        <td style="color:var(--good)">${num(c.real)}</td>
+        <td style="color:var(--bad)">${num(c.fake)}</td>
+        <td><div style="display:flex;align-items:center;gap:9px"><span class="prog"><i style="width:${p}%;background:${col}"></i></span><span class="pcttag" style="color:${col}">${p}%</span></div></td>
+        <td><button class="link" data-detail="${id}">View →</button></td></tr>`;
+    }).join('');
+    $('ovTable').innerHTML=`<table><thead><tr><th>Client</th><th>Clicks</th><th>Real</th><th>Fake</th><th>Real rate</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    $('ovTable').querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.detail));
+  }
+  $('refreshOv').onclick=loadOverview;
+
+  // ---------- clients ----------
+  async function loadClients(){
+    let data; try{ data=await (await api('/api/clients?admin=1')).json(); }catch(e){ if(e.unauth) return location.reload(); return; }
+    const clients=data.clients||{};
+    let stats={}; try{ stats=(await (await api('/api/stats')).json()).clients||{}; }catch(e){}
+    const ids=Object.keys(clients);
+    if(!ids.length){ $('clientList').innerHTML=emptyBox('No clients yet','Click “+ Add client” to create your first one.'); return; }
+    $('clientList').innerHTML='<div class="clist">'+ids.map(id=>{
+      const c=clients[id], s=stats[id]||{total:0,real:0,fake:0};
+      const base=`${origin}/?c=${id}`;
+      const capi=c.pixel && c.pixel.length>=6 && c.metaToken && c.metaToken.length>8;
+      const chan=c.channelTitle?`📢 ${esc(c.channelTitle)} ✓`:(c.tgChannel?`📢 ${esc(c.tgChannel)}`:'📢 no channel');
+      return `<div class="ccard">
+        <div class="top"><div class="avatar" style="background:${avColor(id)}">${initials(c.name||id)}</div>
+          <div><div class="nm">${esc(c.name||id)}</div><div class="id">${id} · ${chan}</div></div>
+          <span class="pill ${capi?'on':'off'}">${capi?'CAPI ✓':'CAPI off'}</span></div>
+        <div class="mini">
+          <div><span>Real</span><b style="color:var(--good)">${num(s.real)}</b></div>
+          <div><span>Fake</span><b style="color:var(--bad)">${num(s.fake)}</b></div>
+          <div><span>Total</span><b>${num(s.total)}</b></div></div>
+        <div class="urlrow"><code title="${base}">${base}</code>
+          <button class="ibtn ig" data-copy="${base}&utm_source=instagram">IG</button>
+          <button class="ibtn fb" data-copy="${base}&utm_source=facebook">FB</button></div>
+        <div class="acts">
+          <button data-view="${id}">📊 Analytics</button>
+          <button data-edit="${id}">✏️ Edit</button>
+          <button class="del" data-del="${id}">🗑</button></div></div>`;
+    }).join('')+'</div>';
+    const CL=clients;
+    $('clientList').querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy));
+    $('clientList').querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>openDetail(b.dataset.view));
+    $('clientList').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(b.dataset.edit,CL[b.dataset.edit]));
+    $('clientList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delClient(b.dataset.del,CL[b.dataset.del]));
+  }
+
+  // ---------- add/edit ----------
+  $('addBtn').onclick=()=>openEdit(null,null);
+  function openEdit(id,c){ editingId=id; $('editTitle').textContent=id?'Edit client':'Add client';
+    $('fName').value=c?.name||''; $('fChannel').value=c?.tgChannel||''; $('fPixel').value=c?.pixel||'';
+    $('fToken').value=c?.metaToken||''; $('fTest').value=c?.metaTestCode||'';
+    $('editOv').classList.add('show'); setTimeout(()=>$('fName').focus(),50); }
+  function closeEdit(){ $('editOv').classList.remove('show'); }
+  $('editClose').onclick=closeEdit; $('editCancel').onclick=closeEdit;
+  $('editOv').onclick=e=>{ if(e.target.id==='editOv') closeEdit(); };
+  $('editSave').onclick=async()=>{
+    const name=$('fName').value.trim(); if(!name){ toast('Client name zaroori hai',true); return; }
+    const body={name,pixel:$('fPixel').value.trim(),metaToken:$('fToken').value.trim(),
+      tgChannel:$('fChannel').value.trim(),metaTestCode:$('fTest').value.trim()}; if(editingId) body.id=editingId;
+    $('editSave').disabled=true; $('editSave').textContent='Saving…';
+    try{ const res=await api('/api/clients',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+      const out=await res.json().catch(()=>({}));
+      if(!res.ok){ toast('Save failed',true); return; }
+      closeEdit();
+      if(out.verify && out.verify.ok===false) toast('Saved, par bot channel me admin nahi: '+out.verify.error,true);
+      else toast(editingId?'Client updated ✓':'Client added ✓');
+      loadClients(); loadOverview();
+    }catch(e){ toast('Network error',true); }
+    finally{ $('editSave').disabled=false; $('editSave').textContent='Save client'; }
+  };
+  async function delClient(id,c){ if(!confirm('Delete "'+(c?.name||id)+'"? Stats bhi hat jayenge.')) return;
+    try{ await api('/api/clients?id='+encodeURIComponent(id),{method:'DELETE'}); toast('Client deleted'); loadClients(); loadOverview(); }
+    catch(e){ toast('Delete failed',true); } }
+
+  // ---------- detail ----------
+  async function openDetail(id){
+    $('detailOv').classList.add('show'); $('dTitle').textContent='Loading…';
+    $('dStats').innerHTML=''; $('dChart').innerHTML=''; $('dSources').innerHTML=''; $('dRecent').innerHTML='';
+    let data; try{ data=await (await api('/api/stats?clientId='+encodeURIComponent(id))).json(); }catch(e){ toast('Load failed',true); return; }
+    const a=data.agg, c=data.client; $('dTitle').textContent=(c?.name||id);
+    const pct=a.total?Math.round(a.real/a.total*100):0;
+    $('dStats').innerHTML=statCard('Total',a.total,'','🖱️')+statCard('Real',a.real,'good','✅')+statCard('Fake',a.fake,'bad','🤖')+statCard('Real %',pct+'%','brand','📈');
+    // 7-day chart
+    const days=[]; for(let i=6;i>=0;i--){ const d=new Date(Date.now()-i*864e5).toISOString().slice(0,10); days.push(d); }
+    const dmax=Math.max(1,...days.map(d=>{ const x=a.byDay[d]||{real:0,fake:0}; return x.real+x.fake; }));
+    $('dChart').innerHTML=days.map(d=>{ const x=a.byDay[d]||{real:0,fake:0};
+      const rh=x.real/dmax*100, fh=x.fake/dmax*100;
+      return `<div class="col"><div class="bars">
+        <i style="height:${rh}%;background:var(--good)" title="${x.real} real"></i>
+        <i style="height:${fh}%;background:var(--bad)" title="${x.fake} fake"></i></div>
+        <div class="day">${d.slice(5)}</div></div>`; }).join('');
+    // sources
+    const sn={instagram:'Instagram',facebook:'Facebook',other:'Other'}, col={instagram:'#e1306c',facebook:'#1877f2',other:'#8b93c0'};
+    $('dSources').innerHTML=Object.keys(a.bySource).map(s=>{ const d=a.bySource[s],t=d.real+d.fake,rp=t?d.real/t*100:0,fp=t?d.fake/t*100:0;
+      return `<div class="srow"><span class="dot" style="background:${col[s]}"></span><span class="name">${sn[s]||s}</span>
+        <span class="barwrap"><i style="width:${rp}%;background:var(--good)"></i><i style="width:${fp}%;background:var(--bad)"></i></span>
+        <span class="nums">${num(d.real)} real / ${num(d.fake)} fake</span></div>`; }).join('');
+    // recent
+    if(!a.recent||!a.recent.length) $('dRecent').innerHTML='<p style="color:var(--mute);font-size:13px">No activity yet.</p>';
+    else $('dRecent').innerHTML=`<table><thead><tr><th>Time</th><th>Result</th><th>Source</th><th>Reason</th></tr></thead><tbody>`+
+      a.recent.map(r=>`<tr><td>${new Date(r.t).toLocaleString()}</td><td><span class="tag ${r.result}">${r.result}</span></td><td>${r.source}</td><td style="color:var(--mute)">${esc(r.reason||'-')}</td></tr>`).join('')+`</tbody></table>`;
+  }
+  $('detailClose').onclick=()=>$('detailOv').classList.remove('show');
+  $('detailOv').onclick=e=>{ if(e.target.id==='detailOv') $('detailOv').classList.remove('show'); };
+
+  // ---------- helpers ----------
+  function copy(t){ navigator.clipboard?.writeText(t).then(()=>toast('Link copied ✓')).catch(()=>toast(t)); }
+  function emptyBox(t,s){ return `<div class="empty"><div class="big">📭</div><div style="font-weight:800;color:var(--text);font-size:16px">${t}</div><div style="font-size:13.5px;margin-top:5px">${s}</div></div>`; }
+
+  // ---------- boot ----------
+  (async()=>{ if(KEY){ try{ if(await tryLogin(KEY)) return showApp(); }catch(e){} } $('loginKey').focus(); })();
+})();
+</script>
+</body>
+</html>

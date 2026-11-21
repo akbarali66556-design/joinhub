@@ -1,0 +1,21 @@
+# One-click deploy on Render (https://render.com) — free plan works.
+# Render par: New + → Blueprint → apni GitHub repo chuno → ye file khud padh lega.
+services:
+  - type: web
+    name: joinhub
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.mjs
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false          # Render dashboard me apna strong password daalo
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false          # @BotFather ka bot token
+      - key: AUTO_APPROVE
+        value: "true"
+      - key: INVITE_LINK_TTL_MINUTES
+        value: "120"
+      - key: META_API_VERSION
+        value: "v23.0"
+# PUBLIC_URL deploy ke baad Render jo URL de, use env me daal dena (optional).

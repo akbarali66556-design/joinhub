@@ -1,0 +1,9 @@
+{
+  "name": "joinhub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Multi-client Meta ads -> landing -> Telegram join tracker with real Conversions API verification.",
+  "scripts": { "start": "node server.mjs" },
+  "engines": { "node": ">=18" }
+}
