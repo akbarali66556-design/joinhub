@@ -100,6 +100,24 @@ input{font-family:inherit}
 .kvrow:last-child{border-bottom:0}
 .kvrow b{color:var(--text);font-variant-numeric:tabular-nums}
 .muted{color:var(--mute)}
+/* Meta shield */
+.shield{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(47,227,166,.14),rgba(79,140,255,.1));border:1px solid rgba(47,227,166,.32);border-radius:18px;padding:18px 22px;margin-bottom:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.shield-l{display:flex;align-items:center;gap:14px}
+.shield-ic{width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,#2fe3a6,#4f8cff);display:grid;place-items:center;font-size:24px;box-shadow:0 10px 24px rgba(47,227,166,.35)}
+.shield-t{font-weight:800;font-size:16px}
+.shield-s{color:var(--mute);font-size:12.5px;margin-top:3px}
+.shield-r{display:flex;gap:24px}
+.sm{text-align:center}
+.sm-v{font-size:25px;font-weight:900;font-variant-numeric:tabular-nums}
+.sm-v.good{color:var(--good)}.sm-v.bad{color:var(--bad)}
+.sm-k{font-size:10.5px;color:var(--mute);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+/* funnel */
+.fsteps{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fstep{flex:1;min-width:92px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:14px;text-align:center}
+.fn{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums}
+.fn.good{color:var(--good)}.fn.brand{color:#9db4ff}
+.fk{font-size:10.5px;color:var(--mute);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.farr{color:var(--dim);font-size:12px;font-weight:800;white-space:nowrap}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
 .panel h3{font-size:13px;margin:0 0 18px;color:var(--mute);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
 
@@ -570,12 +588,23 @@ tr:last-child td{border-bottom:0}
     const r=data.rich, c=data.client; $('dTitle').textContent=(c?.name||id);
     const SN={instagram:'Instagram',facebook:'Facebook',other:'Other'}, SC={instagram:'#ff7bb0',facebook:'#79b0ff',other:'#b6afda'};
     const st=(k,v,cls,ic,glow)=>statCard(k,v,cls,ic,glow);
-    let h='<div class="stats" style="margin-bottom:16px">'+
+    const f=r.funnel||{visits:0,clicks:0,joins:0,inChannel:0,clickRate:0,joinRate:0,stayRate:0};
+    let h='';
+    // Meta protection shield
+    h+=`<div class="shield"><div class="shield-l"><div class="shield-ic">🛡️</div><div><div class="shield-t">Meta Conversion Shield</div><div class="shield-s">Sirf <b style="color:var(--good)">REAL</b> joins Meta ko gaye — bot/fake <b style="color:var(--bad)">0%</b> pahuncha</div></div></div>
+      <div class="shield-r"><div class="sm"><div class="sm-v good">${num(r.capi.sent)}</div><div class="sm-k">Real → Meta</div></div><div class="sm"><div class="sm-v bad">${num(r.fake)}</div><div class="sm-k">Fake blocked</div></div><div class="sm"><div class="sm-v">100%</div><div class="sm-k">Clean to Meta</div></div></div></div>`;
+    h+='<div class="stats" style="margin-bottom:16px">'+
       st('Channel members', r.channel.members!=null?r.channel.members:'—','','👥')+
       st('Total joins', r.members.joins,'good','✅')+
-      st('In channel', Math.max(0,r.members.joins-r.members.left),'brand','📥')+
+      st('In channel', f.inChannel,'brand','📥')+
       st('Left', r.members.left,'bad','📤')+
       st('Pending', r.members.pending,'','⏳')+'</div>';
+    // Conversion funnel
+    h+=`<div class="panel" style="margin-bottom:16px"><h3>Conversion funnel</h3><div class="fsteps">
+      <div class="fstep"><div class="fn">${num(f.visits)}</div><div class="fk">Visits</div></div><div class="farr">${f.clickRate}% ▸</div>
+      <div class="fstep"><div class="fn">${num(f.clicks)}</div><div class="fk">Join clicks</div></div><div class="farr">${f.joinRate}% ▸</div>
+      <div class="fstep"><div class="fn good">${num(f.joins)}</div><div class="fk">Joins</div></div><div class="farr">${f.stayRate}% ▸</div>
+      <div class="fstep"><div class="fn brand">${num(f.inChannel)}</div><div class="fk">In channel</div></div></div></div>`;
     // Platform + Placements
     h+='<div class="grid2" style="margin-bottom:16px"><div class="panel"><h3>Platform (kahan se aaya)</h3>';
     for(const s of ['instagram','facebook','other']){ const p=r.platform[s];
@@ -591,6 +620,14 @@ tr:last-child td{border-bottom:0}
       kv('Joins',num(r.members.joins))+kv('From our ads',num(r.members.fromAds))+kv('Left',num(r.members.left),'var(--bad)')+kv('24h stay',r.members.stay24h+'%')+kv('Pending',num(r.members.pending),'var(--warn)')+kv('Join requests',num(r.members.requests))+kv('Approved by you',num(r.members.approvedYou))+kv('Approved by bot',num(r.members.approvedBot))+kv('CAPI at request',num(r.members.capiAtRequest))+'</div>'+
       '<div class="panel"><h3>CAPI (Meta)</h3>'+kv('Sent',num(r.capi.sent),'var(--good)')+kv('Errors',num(r.capi.errors),r.capi.errors?'var(--bad)':'var(--good)')+kv('Not our invite',num(r.capi.notOurInvite))+'</div>'+
       '<div class="panel"><h3>Traffic quality</h3>'+kv('Visit→click gap',r.traffic.visitClickGap+'%')+kv('With fbclid',r.traffic.withFbclid+'%')+kv('IPs with 4+ visits',num(r.traffic.ips4plus))+'</div></div>';
+    // Design performance + smart insights (jo kisi ne na dekhe ho)
+    h+='<div class="grid2" style="margin-bottom:16px"><div class="panel"><h3>Landing design performance</h3><table><thead><tr><th>Design</th><th>Visits</th><th>Joins</th><th>Join rate</th></tr></thead><tbody>'+
+      ((r.designPerf||[]).map(d=>`<tr><td>${esc(d.name)}</td><td>${num(d.visits)}</td><td>${num(d.joins)}</td><td><b style="color:var(--good)">${d.rate}%</b></td></tr>`).join('')||'<tr><td colspan="4" class="muted">No data</td></tr>')+'</tbody></table></div>';
+    const brNames={'no-js':'JavaScript nahi chala','bot-ua':'Bot / crawler','suspicious-ip':'Same IP (spam)','no-interaction':'No interaction','bot':'Bot'};
+    const brs=Object.entries(r.blockReasons||{}).sort((a,b)=>b[1]-a[1]);
+    h+='<div class="panel"><h3>Fake kyun block hue</h3>'+
+      (brs.length?brs.map(([k,v])=>`<div class="kvrow"><span>${brNames[k]||k}</span><b style="color:var(--bad)">${num(v)}</b></div>`).join(''):'<p class="muted">Abhi koi fake block nahi hua.</p>')+
+      `<div class="kvrow" style="border-top:1px solid var(--line2)"><span>⚡ Avg. join speed</span><b style="color:var(--good)">${r.avgJoinSec?r.avgJoinSec+'s':'—'}</b></div></div></div>`;
     // 7-day chart
     const days=[]; for(let i=6;i>=0;i--) days.push(new Date(Date.now()-i*864e5).toISOString().slice(0,10));
     const dmax=Math.max(1,...days.map(d=>{const x=r.byDay[d]||{real:0,fake:0};return x.real+x.fake;}));

@@ -153,6 +153,9 @@ async function refreshMemberCounts() {
   save();
 }
 setInterval(refreshMemberCounts, 10 * 60e3).unref();
+// Render free instance ko jagaye rakho — landing hamesha super-fast khule (cold-start na ho)
+const SELF_URL = (process.env.RENDER_EXTERNAL_URL || CFG.publicUrl || '').replace(/\/$/, '');
+if (SELF_URL) setInterval(() => { fetch(SELF_URL + '/favicon.ico').catch(() => {}); }, 12 * 60e3).unref();
 // bot ko client ke channel me admin verify karo + title le lo
 async function verifyChannel(chan) {
   if (DEMO) return { ok: false, title: '', error: 'DEMO मोड: bot token नहीं डाला' };
@@ -323,8 +326,20 @@ function richStats(clientId) {
   const pending = Object.values(db.pending || {}).filter((p) => { const v = db.visitors[p.vid]; return v && v.clientId === clientId; }).length;
   const ips4 = Object.values(ipCount).filter((n) => n >= 4).length;
   const fake = list.filter((v) => !v.joinedAt && (v.bot || v.suspicious)).length;
+  const inCh = Math.max(0, joins - left);
+  const funnel = { visits, clicks, joins, inChannel: inCh, clickRate: pct(clicks, visits), joinRate: pct(joins, clicks), stayRate: pct(inCh, joins) };
+  const vmap = {};
+  for (const v of list) { const n = v.variant || '?'; (vmap[n] ||= { visits: 0, joins: 0 }); vmap[n].visits++; if (v.joinedAt) vmap[n].joins++; }
+  const designPerf = Object.entries(vmap).map(([name, x]) => ({ name, visits: x.visits, joins: x.joins, rate: pct(x.joins, x.visits) })).sort((a, b) => b.joins - a.joins);
+  // Unique insights: bot block reasons + avg time-to-join
+  const blockReasons = {}; let ttjSum = 0, ttjN = 0;
+  for (const v of list) {
+    if (!v.joinedAt && (v.bot || v.suspicious)) { const rn = v.botReason || (v.suspicious ? 'suspicious-ip' : 'bot'); blockReasons[rn] = (blockReasons[rn] || 0) + 1; }
+    if (v.joinedAt && v.createdAt) { ttjSum += (v.joinedAt - v.createdAt); ttjN++; }
+  }
+  const avgJoinSec = ttjN ? Math.round(ttjSum / ttjN / 1000) : 0;
   return {
-    total: clicks, real: joins, fake,
+    total: clicks, real: joins, fake, funnel, designPerf, blockReasons, avgJoinSec,
     channel: { title: c.channelTitle || c.name, members: c.memberCount ?? null, membersAt: c.memberCountAt || null },
     platform,
     placements: Object.values(placeMap).sort((a, b) => b.joins - a.joins),
@@ -386,6 +401,8 @@ const server = http.createServer(async (req, res) => {
         db.visitors[v.id] = v; (db.variantShown[cid] ||= {})[variant] = ((db.variantShown[cid] || {})[variant] || 0) + 1; save();
       }
       if (!variants().includes(v.variant)) v.variant = pickVariant(cid);
+      // Invite link pehle hi background me bana lo — taaki Join dabate hi turant (super-fast) khule
+      if (!DEMO && (client.chatId || client.tgChannel)) inviteLinkFor(v, client).catch(() => {});
       return send(res, 200, renderLanding(v.variant, v.id, client), { 'Set-Cookie': `jh_vid=${v.id}; Path=/; Max-Age=2592000; SameSite=Lax` });
     }
 
@@ -399,8 +416,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && p === '/join') {
       const v = db.visitors[url.searchParams.get('vid')]; if (!v) return send(res, 302, '', { Location: '/' });
       const client = db.clients[v.clientId]; if (!client) return send(res, 302, '', { Location: '/' });
-      if (!v.clickedAt) { v.clickedAt = Date.now(); if (!v.human) v.bot = true; } // clicked but never ran JS = bot
-      if (BOT_UA.test(v.ua) || !v.ua) v.bot = true;
+      if (!v.clickedAt) { v.clickedAt = Date.now(); if (!v.human) { v.bot = true; v.botReason = v.botReason || 'no-js'; } }
+      if (BOT_UA.test(v.ua) || !v.ua) { v.bot = true; v.botReason = 'bot-ua'; }
       const c = cookies(req); if (c._fbp) v.fbp = c._fbp; if (c._fbc && !v.fbc) v.fbc = c._fbc;
       save();
       if (DEMO) return send(res, 302, '', { Location: `/demo-join?vid=${v.id}` });
