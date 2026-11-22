@@ -10,23 +10,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0b0618;--bg2:#17102e;--card:rgba(255,255,255,.065);--card2:rgba(255,255,255,.12);--line:rgba(255,255,255,.12);--line2:rgba(255,255,255,.2);
-  --text:#f3f1ff;--mute:#b7b0dc;--dim:#847cb4;
-  --brand:#7aa2ff;--brand2:#c85bff;--good:#2fe3a6;--bad:#ff5d8f;--warn:#ffc24b;
-  --gold:#a9bcff;--gold2:#c85bff;
+  --bg:#081426;--bg2:#0e1f3a;--card:rgba(255,255,255,.055);--card2:rgba(255,255,255,.1);--line:rgba(120,160,255,.15);--line2:rgba(120,160,255,.26);
+  --text:#eef4ff;--mute:#9db0d6;--dim:#6b82ab;
+  --brand:#5b9cff;--brand2:#2563eb;--good:#2fe3a6;--bad:#ff5d7d;--warn:#ffc24b;
+  --gold:#7fb0ff;--gold2:#3b82f6;
   --ig:#e1306c;--fb:#1877f2;
-  --grad:linear-gradient(135deg,#4f8cff 0%,#9a5cff 52%,#ff5fb0 100%);
+  --grad:linear-gradient(135deg,#2f6bff 0%,#4f8cff 55%,#38b6ff 100%);
   --btxt:#ffffff;
-  --shadow:0 24px 60px rgba(8,2,20,.6);
+  --shadow:0 24px 60px rgba(4,12,28,.6);
   --display:'Inter',system-ui,-apple-system,sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
   font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 body{background:
-  radial-gradient(55% 45% at 10% 0%,rgba(79,140,255,.30),transparent 60%),
-  radial-gradient(50% 42% at 92% 6%,rgba(200,91,255,.26),transparent 60%),
-  radial-gradient(60% 50% at 75% 100%,rgba(255,95,176,.20),transparent 60%),
+  radial-gradient(55% 45% at 10% 0%,rgba(47,107,255,.32),transparent 60%),
+  radial-gradient(50% 42% at 92% 6%,rgba(56,182,255,.22),transparent 60%),
+  radial-gradient(60% 50% at 75% 100%,rgba(37,99,235,.2),transparent 60%),
   var(--bg);background-attachment:fixed}
 button{font-family:inherit;cursor:pointer}
 input{font-family:inherit}
@@ -36,12 +36,12 @@ input{font-family:inherit}
 
 /* ---------- login ---------- */
 #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;
-  background:radial-gradient(72% 62% at 50% -8%,rgba(154,92,255,.42),transparent 62%),radial-gradient(60% 50% at 100% 100%,rgba(79,140,255,.3),transparent 60%),#0b0618}
+  background:radial-gradient(72% 62% at 50% -8%,rgba(47,107,255,.42),transparent 62%),radial-gradient(60% 50% at 100% 100%,rgba(56,182,255,.3),transparent 60%),#081426}
 .loginbox{width:100%;max-width:410px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04));
   backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);
   border:1px solid var(--line);border-radius:26px;padding:40px 32px;text-align:center;box-shadow:var(--shadow);position:relative}
 .loginbox::before{content:"";position:absolute;inset:0;border-radius:26px;padding:1px;
-  background:linear-gradient(160deg,rgba(154,92,255,.7),rgba(79,140,255,.3) 45%,transparent 70%);
+  background:linear-gradient(160deg,rgba(91,156,255,.7),rgba(56,182,255,.3) 45%,transparent 70%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
 .brandmark{width:70px;height:70px;border-radius:20px;margin:0 auto 18px;background:var(--grad);
   display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 12px 34px rgba(231,205,132,.35)}
@@ -85,7 +85,7 @@ input{font-family:inherit}
 /* ---------- stat cards ---------- */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;position:relative;overflow:hidden}
-.stat::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:var(--glow,rgba(231,205,132,.08))}
+.stat::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:var(--glow,rgba(79,140,255,.1))}
 .stat .k{font-size:12.5px;color:var(--mute);font-weight:600;display:flex;align-items:center;gap:9px}
 .stat .ic{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;background:var(--card2)}
 .stat .v{font-size:36px;font-weight:900;font-variant-numeric:tabular-nums;margin-top:12px;letter-spacing:-1px}
@@ -259,9 +259,13 @@ tr:last-child td{border-bottom:0}
     <div class="logo"><span class="m">🎯</span> Join Tracker</div>
     <div class="navlabel">Menu</div>
     <button class="nav active" data-tab="overview"><span class="ic">📊</span> Overview</button>
-    <button class="nav" data-tab="clients"><span class="ic">👥</span> Clients</button>
-    <button class="nav" data-tab="settings"><span class="ic">⚙️</span> Settings</button>
+    <button class="nav" data-tab="campaigns"><span class="ic">🚀</span> Campaigns</button>
+    <button class="nav" data-tab="members"><span class="ic">👥</span> Members</button>
+    <button class="nav" data-tab="capi"><span class="ic">📡</span> CAPI</button>
+    <button class="nav" data-tab="quality"><span class="ic">🛡️</span> Quality</button>
+    <button class="nav" data-tab="master"><span class="ic">🗂️</span> Master</button>
     <div class="spacer"></div>
+    <button class="nav" data-tab="settings"><span class="ic">⚙️</span> Settings</button>
     <button class="logout" id="logout">⎋ Sign out</button>
   </aside>
 
@@ -273,20 +277,38 @@ tr:last-child td{border-bottom:0}
         <button class="btnlink" id="refreshOv">↻ Refresh</button>
       </div>
       <div id="botBanner"></div>
-      <div class="stats" id="ovStats"></div>
-      <div class="grid2">
-        <div class="panel"><h3>Clients performance</h3><div id="ovTable"></div></div>
-        <div class="panel"><h3>Real vs Fake</h3><div id="ovDonut"></div></div>
-      </div>
+      <div class="panel" style="margin-bottom:16px"><h3>Clients performance</h3><div id="ovTable"></div></div>
+      <div id="ovRich"></div>
     </section>
 
     <!-- CLIENTS -->
-    <section id="tab-clients" class="hidden">
+    <section id="tab-campaigns" class="hidden">
       <div class="page-head">
-        <div><h2>Clients</h2><div class="sub">Add a client and tracking starts instantly</div></div>
-        <button class="btn-primary" id="addBtn">+ Add client</button>
+        <div><h2>Campaigns</h2><div class="sub">Add a client/campaign — tracking starts instantly</div></div>
+        <button class="btn-primary" id="addBtn">+ Add campaign</button>
       </div>
       <div id="clientList"></div>
+    </section>
+
+    <!-- MEMBERS -->
+    <section id="tab-members" class="hidden">
+      <div class="page-head"><div><h2>Members</h2><div class="sub">Har subscriber ki A-Z detail</div></div><button class="btnlink" data-reload="members">↻ Refresh</button></div>
+      <div id="memBody"><p class="muted">Loading…</p></div>
+    </section>
+    <!-- CAPI -->
+    <section id="tab-capi" class="hidden">
+      <div class="page-head"><div><h2>CAPI</h2><div class="sub">Meta ko sirf real joins — Conversions API</div></div><button class="btnlink" data-reload="capi">↻ Refresh</button></div>
+      <div id="capiBody"><p class="muted">Loading…</p></div>
+    </section>
+    <!-- QUALITY -->
+    <section id="tab-quality" class="hidden">
+      <div class="page-head"><div><h2>Quality</h2><div class="sub">Traffic quality aur fake blocking</div></div><button class="btnlink" data-reload="quality">↻ Refresh</button></div>
+      <div id="qualBody"><p class="muted">Loading…</p></div>
+    </section>
+    <!-- MASTER -->
+    <section id="tab-master" class="hidden">
+      <div class="page-head"><div><h2>Master</h2><div class="sub">Poora combined master panel</div></div><button class="btnlink" data-reload="master">↻ Refresh</button></div>
+      <div id="masterBody"><p class="muted">Loading…</p></div>
     </section>
 
     <!-- SETTINGS -->
@@ -327,6 +349,15 @@ tr:last-child td{border-bottom:0}
     <div>
       <label class="lbl">Client name</label>
       <input class="field" id="fName" placeholder="e.g. Rahul Fitness">
+    </div>
+    <div style="margin-top:16px">
+      <label class="lbl">Landing title <span style="color:var(--dim)">(landing par naam — khali = channel naam)</span></label>
+      <input class="field" id="fLandingTitle" placeholder="e.g. King Official Channel">
+    </div>
+    <div style="margin-top:16px">
+      <label class="lbl">DP / Photo URL <span style="color:var(--dim)">(optional)</span></label>
+      <input class="field" id="fDp" placeholder="https://... image ka direct link">
+      <div class="hint">Landing par logo ki jagah ye image dikhegi. https:// wala direct image link (jpg/png) daalo.</div>
     </div>
     <div style="margin-top:16px">
       <label class="lbl">Telegram channel (bot must be admin)</label>
@@ -406,14 +437,27 @@ tr:last-child td{border-bottom:0}
   function showApp(){ $('login').classList.add('hidden'); $('app').classList.remove('hidden'); loadOverview(); loadClients(); }
 
   // ---------- tabs ----------
+  const TABS=['overview','campaigns','members','capi','quality','master','settings'];
+  async function loadSection(sec){
+    const bodyId={members:'memBody',capi:'capiBody',quality:'qualBody',master:'masterBody'}[sec];
+    if(!bodyId) return;
+    $(bodyId).innerHTML='<p class="muted">Loading…</p>';
+    let data,subs=[];
+    try{ data=await (await api('/api/stats')).json(); }catch(e){ if(e&&e.unauth) return location.reload(); return; }
+    try{ subs=(await (await api('/api/subscribers')).json()).subscribers||[]; }catch(e){}
+    if(data.rich && (data.rich.visits || Object.keys(data.clients||{}).length)) $(bodyId).innerHTML=renderRich(data.rich, subs, sec);
+    else $(bodyId).innerHTML=emptyBox('No data yet','Campaigns tab se ek client add karo.');
+  }
   document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{
     document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active')); b.classList.add('active');
     const t=b.dataset.tab;
-    $('tab-overview').classList.toggle('hidden',t!=='overview');
-    $('tab-clients').classList.toggle('hidden',t!=='clients');
-    $('tab-settings').classList.toggle('hidden',t!=='settings');
-    if(t==='overview') loadOverview(); if(t==='clients') loadClients(); if(t==='settings') loadSettings();
+    TABS.forEach(x=>{ const el=$('tab-'+x); if(el) el.classList.toggle('hidden',x!==t); });
+    if(t==='overview') loadOverview();
+    else if(t==='campaigns') loadClients();
+    else if(t==='settings') loadSettings();
+    else loadSection(t);
   });
+  document.querySelectorAll('[data-reload]').forEach(b=>b.onclick=()=>loadSection(b.dataset.reload));
 
   // ---------- settings ----------
   let setAutoVal=true;
@@ -476,17 +520,8 @@ tr:last-child td{border-bottom:0}
     else if(data.bot&&data.bot.ok) bb.innerHTML='<div style="background:rgba(46,199,154,.12);border:1px solid rgba(46,199,154,.3);color:#2ec79a;padding:12px 16px;border-radius:12px;margin-bottom:18px;font-size:13.5px">✓ Telegram bot connected: <b>@'+esc(data.bot.username||'')+'</b></div>';
     else if(data.bot) bb.innerHTML='<div style="background:rgba(255,93,125,.12);border:1px solid rgba(255,93,125,.3);color:#ff5d7d;padding:12px 16px;border-radius:12px;margin-bottom:18px;font-size:13.5px">✕ Telegram bot problem: '+esc(data.bot.message||'')+'</div>';
     else bb.innerHTML='';
-    let total=0,real=0,fake=0,n=0;
-    for(const id in clients){ total+=clients[id].total; real+=clients[id].real; fake+=clients[id].fake; n++; }
-    const pct=total?Math.round(real/total*100):0;
-    $('ovStats').innerHTML=
-      statCard('Active clients',n,'','👥','rgba(75,123,255,.1)')+
-      statCard('Total clicks',total,'','🖱️','rgba(138,92,255,.1)')+
-      statCard('Real joins',real,'good','✅','rgba(31,217,154,.1)',pct+'% of clicks')+
-      statCard('Fake / bot',fake,'bad','🤖','rgba(255,93,125,.1)',(total?100-pct:0)+'% blocked')+
-      statCard('Real rate',pct+'%','brand','📈','rgba(75,123,255,.1)');
-    $('ovDonut').innerHTML = total ? donut(real,fake) : `<div class="empty"><div class="big">🍩</div>No data yet.</div>`;
-    if(!n){ $('ovTable').innerHTML=emptyBox('No clients yet','Add a client from the Clients tab.'); return; }
+    const n=Object.keys(clients).length;
+    if(!n){ $('ovTable').innerHTML=emptyBox('No clients yet','Add a client from the Clients tab.'); $('ovRich').innerHTML=''; return; }
     const rows=Object.entries(clients).map(([id,c])=>{
       const p=c.total?Math.round(c.real/c.total*100):0;
       const col=p>=70?'var(--good)':p>=40?'var(--warn)':'var(--bad)';
@@ -497,10 +532,12 @@ tr:last-child td{border-bottom:0}
         <td style="color:var(--good)">${num(c.real)}</td>
         <td style="color:var(--bad)">${num(c.fake)}</td>
         <td><div style="display:flex;align-items:center;gap:9px"><span class="prog"><i style="width:${p}%;background:${col}"></i></span><span class="pcttag" style="color:${col}">${p}%</span></div></td>
-        <td><button class="link" data-detail="${id}">View →</button></td></tr>`;
+        <td><button class="link" data-detail="${id}">Analytics →</button></td></tr>`;
     }).join('');
     $('ovTable').innerHTML=`<table><thead><tr><th>Client</th><th>Clicks</th><th>Real</th><th>Fake</th><th>Real rate</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
     $('ovTable').querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.detail));
+    // Combined master panel (sab clients) — Overview par hi
+    if(data.rich){ let subs=[]; try{ subs=(await (await api('/api/subscribers')).json()).subscribers||[]; }catch(e){} $('ovRich').innerHTML=renderRich(data.rich, subs, 'overview'); }
   }
   $('refreshOv').onclick=loadOverview;
 
@@ -553,6 +590,7 @@ tr:last-child td{border-bottom:0}
   function openEdit(id,c){ editingId=id; $('editTitle').textContent=id?'Edit client':'Add client';
     $('fName').value=c?.name||''; $('fChannel').value=c?.tgChannel||''; $('fPixel').value=c?.pixel||'';
     $('fToken').value=c?.metaToken||''; $('fTest').value=c?.metaTestCode||''; $('fEvent').value=c?.metaEvent||'Lead';
+    $('fLandingTitle').value=c?.landingTitle||''; $('fDp').value=c?.dpUrl||'';
     fillChannels(c?.tgChannel||'');
     $('editOv').classList.add('show'); setTimeout(()=>$('fName').focus(),50); }
   $('fChannelSelect').onchange=()=>{ const v=$('fChannelSelect').value; if(v&&v!=='__manual') $('fChannel').value=v; if(v==='__manual'){ $('fChannel').focus(); } };
@@ -562,7 +600,8 @@ tr:last-child td{border-bottom:0}
   $('editSave').onclick=async()=>{
     const name=$('fName').value.trim(); if(!name){ toast('Client name zaroori hai',true); return; }
     const body={name,pixel:$('fPixel').value.trim(),metaToken:$('fToken').value.trim(),
-      tgChannel:$('fChannel').value.trim(),metaTestCode:$('fTest').value.trim(),metaEvent:$('fEvent').value}; if(editingId) body.id=editingId;
+      tgChannel:$('fChannel').value.trim(),metaTestCode:$('fTest').value.trim(),metaEvent:$('fEvent').value,
+      landingTitle:$('fLandingTitle').value.trim(),dpUrl:$('fDp').value.trim()}; if(editingId) body.id=editingId;
     $('editSave').disabled=true; $('editSave').textContent='Saving…';
     try{ const res=await api('/api/clients',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
       const out=await res.json().catch(()=>({}));
@@ -586,59 +625,40 @@ tr:last-child td{border-bottom:0}
     try{ data=await (await api('/api/stats?clientId='+encodeURIComponent(id))).json(); }catch(e){ toast('Load failed',true); return; }
     try{ subs=(await (await api('/api/subscribers?clientId='+encodeURIComponent(id))).json()).subscribers||[]; }catch(e){}
     const r=data.rich, c=data.client; $('dTitle').textContent=(c?.name||id);
-    const SN={instagram:'Instagram',facebook:'Facebook',other:'Other'}, SC={instagram:'#ff7bb0',facebook:'#79b0ff',other:'#b6afda'};
-    const st=(k,v,cls,ic,glow)=>statCard(k,v,cls,ic,glow);
-    const f=r.funnel||{visits:0,clicks:0,joins:0,inChannel:0,clickRate:0,joinRate:0,stayRate:0};
-    let h='';
-    // Meta protection shield
-    h+=`<div class="shield"><div class="shield-l"><div class="shield-ic">🛡️</div><div><div class="shield-t">Meta Conversion Shield</div><div class="shield-s">Sirf <b style="color:var(--good)">REAL</b> joins Meta ko gaye — bot/fake <b style="color:var(--bad)">0%</b> pahuncha</div></div></div>
-      <div class="shield-r"><div class="sm"><div class="sm-v good">${num(r.capi.sent)}</div><div class="sm-k">Real → Meta</div></div><div class="sm"><div class="sm-v bad">${num(r.fake)}</div><div class="sm-k">Fake blocked</div></div><div class="sm"><div class="sm-v">100%</div><div class="sm-k">Clean to Meta</div></div></div></div>`;
-    h+='<div class="stats" style="margin-bottom:16px">'+
-      st('Channel members', r.channel.members!=null?r.channel.members:'—','','👥')+
-      st('Total joins', r.members.joins,'good','✅')+
-      st('In channel', f.inChannel,'brand','📥')+
-      st('Left', r.members.left,'bad','📤')+
-      st('Pending', r.members.pending,'','⏳')+'</div>';
-    // Conversion funnel
-    h+=`<div class="panel" style="margin-bottom:16px"><h3>Conversion funnel</h3><div class="fsteps">
-      <div class="fstep"><div class="fn">${num(f.visits)}</div><div class="fk">Visits</div></div><div class="farr">${f.clickRate}% ▸</div>
-      <div class="fstep"><div class="fn">${num(f.clicks)}</div><div class="fk">Join clicks</div></div><div class="farr">${f.joinRate}% ▸</div>
-      <div class="fstep"><div class="fn good">${num(f.joins)}</div><div class="fk">Joins</div></div><div class="farr">${f.stayRate}% ▸</div>
-      <div class="fstep"><div class="fn brand">${num(f.inChannel)}</div><div class="fk">In channel</div></div></div></div>`;
-    // Platform + Placements
-    h+='<div class="grid2" style="margin-bottom:16px"><div class="panel"><h3>Platform (kahan se aaya)</h3>';
-    for(const s of ['instagram','facebook','other']){ const p=r.platform[s];
-      h+=`<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="color:${SC[s]}">${SN[s]}</b><span class="muted">${p.pct}% of joins</span></div>
-        <div class="prog" style="height:8px"><i style="width:${p.pct}%;background:${SC[s]}"></i></div>
-        <div class="muted" style="font-size:12px;margin-top:5px">Visits ${num(p.visits)} · Clicks ${num(p.clicks)} · Joins ${num(p.joins)}</div></div>`; }
-    h+='</div><div class="panel"><h3>Placements</h3><table><thead><tr><th>Platform</th><th>Type</th><th>Visits</th><th>Clicks</th><th>Joins</th></tr></thead><tbody>'+
-      (r.placements.map(pl=>`<tr><td>${SN[pl.platform]||pl.platform}</td><td><span class="tag ${pl.placement==='paid'?'real':'fake'}">${pl.placement}</span></td><td>${num(pl.visits)}</td><td>${num(pl.clicks)}</td><td>${num(pl.joins)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No data</td></tr>')+
-      '</tbody></table></div></div>';
-    // Members + CAPI + Traffic
+    $('dBody').innerHTML=renderRich(r, subs);
+  }
+  function P(r, subs){
+    const SN={instagram:'Instagram',facebook:'Facebook',other:'Other'}, SC={instagram:'#7fb0ff',facebook:'#4f9cff',other:'#9db0d6'};
+    const st=(k,v,cls,ic)=>statCard(k,v,cls,ic);
     const kv=(k,v,col)=>`<div class="kvrow"><span>${k}</span><b style="${col?('color:'+col):''}">${v}</b></div>`;
-    h+='<div class="grid3" style="margin-bottom:16px"><div class="panel"><h3>Telegram members</h3>'+
-      kv('Joins',num(r.members.joins))+kv('From our ads',num(r.members.fromAds))+kv('Left',num(r.members.left),'var(--bad)')+kv('24h stay',r.members.stay24h+'%')+kv('Pending',num(r.members.pending),'var(--warn)')+kv('Join requests',num(r.members.requests))+kv('Approved by you',num(r.members.approvedYou))+kv('Approved by bot',num(r.members.approvedBot))+kv('CAPI at request',num(r.members.capiAtRequest))+'</div>'+
-      '<div class="panel"><h3>CAPI (Meta)</h3>'+kv('Sent',num(r.capi.sent),'var(--good)')+kv('Errors',num(r.capi.errors),r.capi.errors?'var(--bad)':'var(--good)')+kv('Not our invite',num(r.capi.notOurInvite))+'</div>'+
-      '<div class="panel"><h3>Traffic quality</h3>'+kv('Visit→click gap',r.traffic.visitClickGap+'%')+kv('With fbclid',r.traffic.withFbclid+'%')+kv('IPs with 4+ visits',num(r.traffic.ips4plus))+'</div></div>';
-    // Design performance + smart insights (jo kisi ne na dekhe ho)
-    h+='<div class="grid2" style="margin-bottom:16px"><div class="panel"><h3>Landing design performance</h3><table><thead><tr><th>Design</th><th>Visits</th><th>Joins</th><th>Join rate</th></tr></thead><tbody>'+
-      ((r.designPerf||[]).map(d=>`<tr><td>${esc(d.name)}</td><td>${num(d.visits)}</td><td>${num(d.joins)}</td><td><b style="color:var(--good)">${d.rate}%</b></td></tr>`).join('')||'<tr><td colspan="4" class="muted">No data</td></tr>')+'</tbody></table></div>';
-    const brNames={'no-js':'JavaScript nahi chala','bot-ua':'Bot / crawler','suspicious-ip':'Same IP (spam)','no-interaction':'No interaction','bot':'Bot'};
-    const brs=Object.entries(r.blockReasons||{}).sort((a,b)=>b[1]-a[1]);
-    h+='<div class="panel"><h3>Fake kyun block hue</h3>'+
-      (brs.length?brs.map(([k,v])=>`<div class="kvrow"><span>${brNames[k]||k}</span><b style="color:var(--bad)">${num(v)}</b></div>`).join(''):'<p class="muted">Abhi koi fake block nahi hua.</p>')+
-      `<div class="kvrow" style="border-top:1px solid var(--line2)"><span>⚡ Avg. join speed</span><b style="color:var(--good)">${r.avgJoinSec?r.avgJoinSec+'s':'—'}</b></div></div></div>`;
-    // 7-day chart
+    const f=r.funnel||{visits:0,clicks:0,joins:0,inChannel:0,clickRate:0,joinRate:0,stayRate:0};
     const days=[]; for(let i=6;i>=0;i--) days.push(new Date(Date.now()-i*864e5).toISOString().slice(0,10));
     const dmax=Math.max(1,...days.map(d=>{const x=r.byDay[d]||{real:0,fake:0};return x.real+x.fake;}));
-    h+='<div class="panel" style="margin-bottom:16px"><h3>Last 7 days (joins)</h3><div class="chart">'+days.map(d=>{const x=r.byDay[d]||{real:0,fake:0};return `<div class="col"><div class="bars"><i style="height:${x.real/dmax*100}%;background:var(--good)"></i><i style="height:${x.fake/dmax*100}%;background:var(--bad)"></i></div><div class="day">${d.slice(5)}</div></div>`;}).join('')+'</div></div>';
-    // Subscribers A-Z
-    h+='<div class="panel"><h3>Subscribers — A to Z ('+subs.length+')</h3>';
-    if(!subs.length) h+='<p class="muted">Abhi koi subscriber nahi.</p>';
-    else h+='<div style="overflow:auto;max-height:420px"><table><thead><tr><th>Username</th><th>Source</th><th>Ad</th><th>Joined</th><th>Status</th><th>Stay</th><th>Approve</th></tr></thead><tbody>'+
-      subs.map(x=>`<tr><td><b>${esc(x.username)}</b></td><td><span class="src ${x.source}">${SN[x.source]||x.source}</span></td><td>${x.fromAd?'✅':'—'}</td><td>${new Date(x.joinedAt).toLocaleString()}</td><td>${x.inChannel?'<span class="tag real">In channel</span>':'<span class="tag fake">Exited</span>'}</td><td>${x.stayMin>=60?Math.round(x.stayMin/60)+'h':x.stayMin+'m'}</td><td class="muted">${x.approvedBy}</td></tr>`).join('')+'</tbody></table></div>';
-    h+='</div>';
-    $('dBody').innerHTML=h;
+    const brNames={'no-js':'JavaScript nahi chala','bot-ua':'Bot / crawler','suspicious-ip':'Same IP (spam)','no-interaction':'No interaction','bot':'Bot'};
+    const brs=Object.entries(r.blockReasons||{}).sort((a,b)=>b[1]-a[1]);
+    return {
+      shield:`<div class="shield"><div class="shield-l"><div class="shield-ic">🛡️</div><div><div class="shield-t">Meta Conversion Shield</div><div class="shield-s">Sirf <b style="color:var(--good)">REAL</b> joins Meta ko gaye — bot/fake <b style="color:var(--bad)">0%</b> pahuncha</div></div></div><div class="shield-r"><div class="sm"><div class="sm-v good">${num(r.capi.sent)}</div><div class="sm-k">Real → Meta</div></div><div class="sm"><div class="sm-v bad">${num(r.fake)}</div><div class="sm-k">Fake blocked</div></div><div class="sm"><div class="sm-v">100%</div><div class="sm-k">Clean to Meta</div></div></div></div>`,
+      cards:'<div class="stats" style="margin-bottom:16px">'+st('Channel members',r.channel.members!=null?r.channel.members:'—','','👥')+st('Total joins',r.members.joins,'good','✅')+st('In channel',f.inChannel,'brand','📥')+st('Left',r.members.left,'bad','📤')+st('Pending',r.members.pending,'','⏳')+'</div>',
+      funnel:`<div class="panel" style="margin-bottom:16px"><h3>Conversion funnel</h3><div class="fsteps"><div class="fstep"><div class="fn">${num(f.visits)}</div><div class="fk">Visits</div></div><div class="farr">${f.clickRate}% ▸</div><div class="fstep"><div class="fn">${num(f.clicks)}</div><div class="fk">Join clicks</div></div><div class="farr">${f.joinRate}% ▸</div><div class="fstep"><div class="fn good">${num(f.joins)}</div><div class="fk">Joins</div></div><div class="farr">${f.stayRate}% ▸</div><div class="fstep"><div class="fn brand">${num(f.inChannel)}</div><div class="fk">In channel</div></div></div></div>`,
+      platform:'<div class="panel"><h3>Platform (kahan se aaya)</h3>'+['instagram','facebook','other'].map(s=>{const p=r.platform[s];return `<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="color:${SC[s]}">${SN[s]}</b><span class="muted">${p.pct}% of joins</span></div><div class="prog" style="height:8px"><i style="width:${p.pct}%;background:${SC[s]}"></i></div><div class="muted" style="font-size:12px;margin-top:5px">Visits ${num(p.visits)} · Clicks ${num(p.clicks)} · Joins ${num(p.joins)}</div></div>`;}).join('')+'</div>',
+      placements:'<div class="panel"><h3>Placements</h3><table><thead><tr><th>Platform</th><th>Type</th><th>Visits</th><th>Clicks</th><th>Joins</th></tr></thead><tbody>'+(r.placements.map(pl=>`<tr><td>${SN[pl.platform]||pl.platform}</td><td><span class="tag ${pl.placement==='paid'?'real':'fake'}">${pl.placement}</span></td><td>${num(pl.visits)}</td><td>${num(pl.clicks)}</td><td>${num(pl.joins)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No data</td></tr>')+'</tbody></table></div>',
+      members:'<div class="panel"><h3>Telegram members</h3>'+kv('Joins',num(r.members.joins))+kv('From our ads',num(r.members.fromAds))+kv('Left',num(r.members.left),'var(--bad)')+kv('24h stay',r.members.stay24h+'%')+kv('Pending',num(r.members.pending),'var(--warn)')+kv('Join requests',num(r.members.requests))+kv('Approved by you',num(r.members.approvedYou))+kv('Approved by bot',num(r.members.approvedBot))+kv('CAPI at request',num(r.members.capiAtRequest))+'</div>',
+      capi:'<div class="panel"><h3>CAPI (Meta)</h3>'+kv('Sent',num(r.capi.sent),'var(--good)')+kv('Errors',num(r.capi.errors),r.capi.errors?'var(--bad)':'var(--good)')+kv('Not our invite',num(r.capi.notOurInvite))+'</div>',
+      traffic:'<div class="panel"><h3>Traffic quality</h3>'+kv('Visit→click gap',r.traffic.visitClickGap+'%')+kv('With fbclid',r.traffic.withFbclid+'%')+kv('IPs with 4+ visits',num(r.traffic.ips4plus))+'</div>',
+      design:'<div class="panel"><h3>Landing design performance</h3><table><thead><tr><th>Design</th><th>Visits</th><th>Joins</th><th>Join rate</th></tr></thead><tbody>'+((r.designPerf||[]).map(d=>`<tr><td>${esc(d.name)}</td><td>${num(d.visits)}</td><td>${num(d.joins)}</td><td><b style="color:var(--good)">${d.rate}%</b></td></tr>`).join('')||'<tr><td colspan="4" class="muted">No data</td></tr>')+'</tbody></table></div>',
+      insights:'<div class="panel"><h3>Fake kyun block hue</h3>'+(brs.length?brs.map(([k,v])=>`<div class="kvrow"><span>${brNames[k]||k}</span><b style="color:var(--bad)">${num(v)}</b></div>`).join(''):'<p class="muted">Abhi koi fake block nahi hua.</p>')+`<div class="kvrow" style="border-top:1px solid var(--line2)"><span>⚡ Avg. join speed</span><b style="color:var(--good)">${r.avgJoinSec?r.avgJoinSec+'s':'—'}</b></div></div>`,
+      chart:'<div class="panel" style="margin-bottom:16px"><h3>Last 7 days (joins)</h3><div class="chart">'+days.map(d=>{const x=r.byDay[d]||{real:0,fake:0};return `<div class="col"><div class="bars"><i style="height:${x.real/dmax*100}%;background:var(--good)"></i><i style="height:${x.fake/dmax*100}%;background:var(--bad)"></i></div><div class="day">${d.slice(5)}</div></div>`;}).join('')+'</div></div>',
+      subs:'<div class="panel"><h3>Subscribers — A to Z ('+subs.length+')</h3>'+(!subs.length?'<p class="muted">Abhi koi subscriber nahi.</p>':'<div style="overflow:auto;max-height:460px"><table><thead><tr><th>Username</th><th>Source</th><th>Ad</th><th>Joined</th><th>Status</th><th>Stay</th><th>Approve</th></tr></thead><tbody>'+subs.map(x=>`<tr><td><b>${esc(x.username)}</b></td><td><span class="src ${x.source}">${SN[x.source]||x.source}</span></td><td>${x.fromAd?'✅':'—'}</td><td>${new Date(x.joinedAt).toLocaleString()}</td><td>${x.inChannel?'<span class="tag real">In channel</span>':'<span class="tag fake">Exited</span>'}</td><td>${x.stayMin>=60?Math.round(x.stayMin/60)+'h':x.stayMin+'m'}</td><td class="muted">${x.approvedBy}</td></tr>`).join('')+'</tbody></table></div>')+'</div>',
+    };
+  }
+  function grid(cols,...items){ return `<div class="${cols===3?'grid3':'grid2'}" style="margin-bottom:16px">${items.join('')}</div>`; }
+  function renderRich(r, subs, sec){
+    const p=P(r, subs); sec=sec||'master';
+    if(sec==='overview') return p.shield+p.cards+p.funnel+grid(2,p.platform,p.placements)+p.chart;
+    if(sec==='members')  return p.cards+grid(2,p.members,p.design)+p.subs;
+    if(sec==='capi')     return p.shield+p.cards+grid(2,p.capi,p.traffic)+p.chart;
+    if(sec==='quality')  return p.shield+grid(2,p.platform,p.placements)+grid(2,p.traffic,p.insights)+p.design;
+    return p.shield+p.cards+p.funnel+grid(2,p.platform,p.placements)+grid(3,p.members,p.capi,p.traffic)+grid(2,p.design,p.insights)+p.chart+p.subs;
   }
   $('dRefresh').onclick=()=>{ if(dCurrent) openDetail(dCurrent); };
   $('detailClose').onclick=()=>$('detailOv').classList.remove('show');

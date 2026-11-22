@@ -115,11 +115,16 @@ function pickVariant(clientId) {
   list.sort((a, b) => (shown[a] || 0) - (shown[b] || 0));
   return list[0];
 }
-function renderLanding(variant, vid, client) {
+function renderLanding(variant, vid, client, cid) {
   let html = fs.readFileSync(path.join(ROOT, variant + '.html'), 'utf8');
   const joinUrl = vid ? `/join?vid=${vid}` : '#';
-  const title = client?.channelTitle || client?.name || 'हमारा Telegram चैनल';
+  const title = client?.landingTitle || client?.channelTitle || client?.name || 'हमारा Telegram चैनल';
   html = html.replaceAll('{{JOIN_URL}}', joinUrl).replaceAll('{{CHANNEL_TITLE}}', esc(title));
+  // DP: manual URL > channel ki apni photo (auto, /dp proxy se — token hidden)
+  const manualDp = (client?.dpUrl && /^https:\/\/[^'"()\s<>]+$/i.test(client.dpUrl)) ? client.dpUrl : '';
+  const dpSrc = manualDp || ((client?.photoFileId && cid && !DEMO) ? `/dp?c=${encodeURIComponent(cid)}` : '');
+  const dp = dpSrc ? `<style>.logo{background-image:url("${dpSrc}")!important;background-size:cover!important;background-position:center!important;color:transparent!important;font-size:0!important}</style>` : '';
+  html = html.replace('</head>', dp + '</head>');
   const pixel = client?.pixel ? `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${esc(client.pixel)}');fbq('track','PageView');</script>` : '';
   const tracker = vid ? `<script>(function(){var vid=${JSON.stringify(vid)},t0=Date.now(),sent=false;
 function ping(k){try{navigator.sendBeacon('/api/seen',JSON.stringify({vid:vid,k:k,ms:Date.now()-t0}))}catch(e){}}
@@ -137,6 +142,7 @@ async function tg(method, params = {}) {
   if (!j.ok) throw new Error(`${method}: ${j.description}`);
   return j.result;
 }
+const DP_CACHE = new Map(); // clientId -> { fileId, buf, ctype, at } (channel DP image memory cache)
 let BOT = { ok: false, username: '', message: DEMO ? 'DEMO मोड (TELEGRAM_BOT_TOKEN नहीं डाला)' : 'जाँच हो रही है…' };
 async function checkBot() {
   if (DEMO) return;
@@ -149,6 +155,13 @@ async function refreshMemberCounts() {
   for (const [id, c] of Object.entries(db.clients)) {
     const chat = c.chatId || c.tgChannel; if (!chat) continue;
     try { const n = await tg('getChatMemberCount', { chat_id: chat }); c.memberCount = n; c.memberCountAt = Date.now(); } catch (e) {}
+    // Channel ki apni photo + title time-time pe refresh (auto-DP ke liye)
+    try {
+      const chat2 = await tg('getChat', { chat_id: chat });
+      const pf = chat2.photo?.big_file_id || chat2.photo?.small_file_id || '';
+      if (pf) c.photoFileId = pf;
+      if (chat2.title) c.channelTitle = chat2.title;
+    } catch (e) {}
   }
   save();
 }
@@ -164,7 +177,7 @@ async function verifyChannel(chan) {
     const m = await tg('getChatMember', { chat_id: chat.id, user_id: BOT.id });
     if (m.status !== 'administrator') return { ok: false, title: chat.title, error: 'Bot channel में Admin नहीं है' };
     if (!m.can_invite_users) return { ok: false, title: chat.title, error: 'Bot को "Invite via link" permission नहीं है' };
-    return { ok: true, title: chat.title, chatId: chat.id };
+    return { ok: true, title: chat.title, chatId: chat.id, photoFileId: chat.photo?.big_file_id || chat.photo?.small_file_id || '' };
   } catch (e) { return { ok: false, title: '', error: e.message }; }
 }
 async function inviteLinkFor(v, client) {
@@ -293,8 +306,11 @@ function aggFor(clientId) {
 const DAY = 24 * 3600e3;
 // Poora master analytics — platform, placements, telegram members, CAPI, traffic
 function richStats(clientId) {
-  const list = Object.values(db.visitors).filter((v) => v.clientId === clientId);
-  const c = db.clients[clientId] || {};
+  const all = clientId == null;
+  const list = all ? Object.values(db.visitors) : Object.values(db.visitors).filter((v) => v.clientId === clientId);
+  const c = all ? {} : (db.clients[clientId] || {});
+  const chMembers = all ? Object.values(db.clients).reduce((s, x) => s + (x.memberCount || 0), 0) : (c.memberCount ?? null);
+  const notOur = all ? Object.values(db.otherJoins || {}).reduce((s, n) => s + n, 0) : ((db.otherJoins || {})[clientId] || 0);
   const platform = {}; for (const s of SOURCES) platform[s] = { visits: 0, clicks: 0, joins: 0, pct: 0 };
   const placeMap = {};
   let visits = 0, clicks = 0, joins = 0, fromAds = 0, left = 0, stayed = 0, requests = 0, approvedYou = 0, approvedBot = 0, capiSent = 0, capiErr = 0, withFbc = 0;
@@ -323,7 +339,7 @@ function richStats(clientId) {
   }
   const pct = (a, b) => (b ? Math.round(a / b * 100) : 0);
   for (const s of SOURCES) platform[s].pct = pct(platform[s].joins, joins);
-  const pending = Object.values(db.pending || {}).filter((p) => { const v = db.visitors[p.vid]; return v && v.clientId === clientId; }).length;
+  const pending = Object.values(db.pending || {}).filter((p) => { const v = db.visitors[p.vid]; return v && (all || v.clientId === clientId); }).length;
   const ips4 = Object.values(ipCount).filter((n) => n >= 4).length;
   const fake = list.filter((v) => !v.joinedAt && (v.bot || v.suspicious)).length;
   const inCh = Math.max(0, joins - left);
@@ -340,11 +356,11 @@ function richStats(clientId) {
   const avgJoinSec = ttjN ? Math.round(ttjSum / ttjN / 1000) : 0;
   return {
     total: clicks, real: joins, fake, funnel, designPerf, blockReasons, avgJoinSec,
-    channel: { title: c.channelTitle || c.name, members: c.memberCount ?? null, membersAt: c.memberCountAt || null },
+    channel: { title: all ? 'All channels' : (c.channelTitle || c.name), members: chMembers, membersAt: c.memberCountAt || null },
     platform,
     placements: Object.values(placeMap).sort((a, b) => b.joins - a.joins),
     members: { joins, fromAds, left, stay24h: pct(stayed, joins), pending, requests, approvedYou, approvedBot, capiAtRequest: capiSent },
-    capi: { sent: capiSent, errors: capiErr, notOurInvite: (db.otherJoins || {})[clientId] || 0 },
+    capi: { sent: capiSent, errors: capiErr, notOurInvite: notOur },
     traffic: { visitClickGap: pct(visits - clicks, visits), withFbclid: pct(withFbc, visits), ips4plus: ips4 },
     bySource: { instagram: { real: platform.instagram.joins, fake: 0 }, facebook: { real: platform.facebook.joins, fake: 0 }, other: { real: platform.other.joins, fake: 0 } },
     byDay, visits,
@@ -352,7 +368,7 @@ function richStats(clientId) {
 }
 // Har subscriber ki A-Z detail
 function subscriberList(clientId) {
-  return Object.values(db.visitors).filter((v) => v.clientId === clientId && v.joinedAt)
+  return Object.values(db.visitors).filter((v) => (clientId == null || v.clientId === clientId) && v.joinedAt)
     .sort((a, b) => b.joinedAt - a.joinedAt).slice(0, 300)
     .map((v) => {
       const inChannel = !v.leftAt;
@@ -388,7 +404,7 @@ const server = http.createServer(async (req, res) => {
       const c = cookies(req);
       let v = c.jh_vid && db.visitors[c.jh_vid];
       if (v && v.clientId !== cid) v = null; // naya client = naya visitor
-      if (BOT_UA.test(ua) || !ua) { const variant = (v && v.variant) || variants()[0]; if (!variant) return send(res, 500, 'landings/ me koi page nahi'); return send(res, 200, renderLanding(variant, null, client)); }
+      if (BOT_UA.test(ua) || !ua) { const variant = (v && v.variant) || variants()[0]; if (!variant) return send(res, 500, 'landings/ me koi page nahi'); return send(res, 200, renderLanding(variant, null, client, cid)); }
       if (!v) {
         const variant = pickVariant(cid); if (!variant) return send(res, 500, 'landings/ me koi page nahi');
         const ip = clientIp(req); const hourAgo = Date.now() - 3600e3;
@@ -403,7 +419,29 @@ const server = http.createServer(async (req, res) => {
       if (!variants().includes(v.variant)) v.variant = pickVariant(cid);
       // Invite link pehle hi background me bana lo — taaki Join dabate hi turant (super-fast) khule
       if (!DEMO && (client.chatId || client.tgChannel)) inviteLinkFor(v, client).catch(() => {});
-      return send(res, 200, renderLanding(v.variant, v.id, client), { 'Set-Cookie': `jh_vid=${v.id}; Path=/; Max-Age=2592000; SameSite=Lax` });
+      return send(res, 200, renderLanding(v.variant, v.id, client, cid), { 'Set-Cookie': `jh_vid=${v.id}; Path=/; Max-Age=2592000; SameSite=Lax` });
+    }
+
+    // ----- channel DP proxy (token server-side hi rehta hai) -----
+    if (req.method === 'GET' && p === '/dp') {
+      const cid = url.searchParams.get('c');
+      const client = cid && db.clients[cid];
+      if (DEMO || !client || !client.photoFileId) { res.writeHead(404); return res.end('no dp'); }
+      try {
+        const cached = DP_CACHE.get(cid);
+        if (cached && cached.fileId === client.photoFileId && Date.now() - cached.at < 6 * 3600e3) {
+          res.writeHead(200, { 'Content-Type': cached.ctype, 'Cache-Control': 'public, max-age=21600' });
+          return res.end(cached.buf);
+        }
+        const f = await tg('getFile', { file_id: client.photoFileId });
+        const fr = await fetch(`https://api.telegram.org/file/bot${CFG.tgToken}/${f.file_path}`);
+        if (!fr.ok) { res.writeHead(404); return res.end('no dp'); }
+        const ctype = fr.headers.get('content-type') || 'image/jpeg';
+        const buf = Buffer.from(await fr.arrayBuffer());
+        DP_CACHE.set(cid, { fileId: client.photoFileId, buf, ctype, at: Date.now() });
+        res.writeHead(200, { 'Content-Type': ctype, 'Cache-Control': 'public, max-age=21600' });
+        return res.end(buf);
+      } catch { res.writeHead(404); return res.end('no dp'); }
     }
 
     // ----- human beacon -----
@@ -447,11 +485,12 @@ const server = http.createServer(async (req, res) => {
         const prev = db.clients[id] || {};
         const client = { name, pixel: String(b.pixel || '').trim(), metaToken: String(b.metaToken || '').trim(),
           metaTestCode: String(b.metaTestCode || '').trim(), metaEvent: String(b.metaEvent || 'Lead').trim() || 'Lead',
-          tgChannel: String(b.tgChannel || '').trim(), chatId: prev.chatId, channelTitle: prev.channelTitle,
+          tgChannel: String(b.tgChannel || '').trim(), chatId: prev.chatId, channelTitle: prev.channelTitle, photoFileId: prev.photoFileId,
+          dpUrl: String(b.dpUrl || '').trim(), landingTitle: String(b.landingTitle || '').trim(),
           created: prev.created || Date.now(), updated: Date.now() };
         // bot ko channel me verify karo (agar token + channel diya hai)
         let verify = null;
-        if (client.tgChannel && !DEMO) { verify = await verifyChannel(client.tgChannel); if (verify.ok) { client.chatId = verify.chatId; client.channelTitle = verify.title; } }
+        if (client.tgChannel && !DEMO) { verify = await verifyChannel(client.tgChannel); if (verify.ok) { client.chatId = verify.chatId; client.channelTitle = verify.title; if (verify.photoFileId) client.photoFileId = verify.photoFileId; } }
         db.clients[id] = client; save();
         return json(res, 200, { ok: true, id, client, verify });
       }
@@ -463,13 +502,13 @@ const server = http.createServer(async (req, res) => {
       const cid = url.searchParams.get('clientId');
       if (cid) { if (!db.clients[cid]) return json(res, 400, { error: 'unknown client' }); return json(res, 200, { clientId: cid, client: db.clients[cid], agg: aggFor(cid), rich: richStats(cid) }); }
       const out = {}; for (const id of Object.keys(db.clients)) { const a = aggFor(id); out[id] = { name: db.clients[id].name, total: a.total, real: a.real, fake: a.fake }; }
-      return json(res, 200, { clients: out, bot: BOT, demo: DEMO });
+      return json(res, 200, { clients: out, bot: BOT, demo: DEMO, rich: richStats(null) });
     }
     if (p === '/api/subscribers') {
       if (!okKey(url)) return json(res, 401, { error: 'unauthorized' });
       const cid = url.searchParams.get('clientId');
-      if (!cid || !db.clients[cid]) return json(res, 400, { error: 'unknown client' });
-      return json(res, 200, { subscribers: subscriberList(cid) });
+      if (cid && !db.clients[cid]) return json(res, 400, { error: 'unknown client' });
+      return json(res, 200, { subscribers: subscriberList(cid || null) });
     }
     if (p === '/api/channels') {
       if (!okKey(url)) return json(res, 401, { error: 'unauthorized' });

@@ -1,0 +1,28 @@
+<!doctype html><html lang="hi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>{{CHANNEL_TITLE}}</title>
+<style>*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;color:#ffecec;
+background:radial-gradient(60% 50% at 14% 0%,rgba(244,63,94,.46),transparent 60%),radial-gradient(55% 45% at 88% 8%,rgba(239,68,68,.32),transparent 60%),radial-gradient(60% 55% at 72% 100%,rgba(190,24,93,.24),transparent 60%),#1c0a0f;background-attachment:fixed}
+.card{width:100%;max-width:420px;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.05));backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);border:1px solid rgba(255,255,255,.18);border-radius:28px;padding:32px 24px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.25)}
+.logo{width:86px;height:86px;border-radius:26px;margin:0 auto 16px;background:linear-gradient(135deg,#f43f5e,#ef4444);display:grid;place-items:center;font-size:38px;box-shadow:0 16px 36px rgba(244,63,94,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.vrow{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:6px}
+h1{font-size:23px;line-height:1.25;font-weight:800;color:#fff}
+.vbadge{width:22px;height:22px;border-radius:50%;background:#f43f5e;display:grid;place-items:center;font-size:12px;color:#fff;flex:none}
+p.t{color:rgba(255,255,255,.78);font-size:14.5px;line-height:1.55;margin-bottom:16px}
+.limited{display:inline-flex;align-items:center;gap:7px;background:rgba(244,63,94,.18);border:1px solid rgba(244,63,94,.4);color:#ffc0cb;font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:999px;margin-bottom:18px}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+.chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;color:#fff}
+.btn{display:block;width:100%;padding:17px;border:0;border-radius:18px;color:#fff;font-size:17.5px;font-weight:800;text-decoration:none;background:linear-gradient(135deg,#f43f5e,#ef4444);box-shadow:0 16px 34px rgba(244,63,94,.5),inset 0 1px 0 rgba(255,255,255,.3);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
+.foot{margin-top:14px;font-size:12px;color:rgba(255,255,255,.6)}
+.hp{position:absolute;left:-9999px}</style></head>
+<body><div class="card">
+<div class="logo">🚨</div>
+<div class="vrow"><h1>{{CHANNEL_TITLE}}</h1><span class="vbadge">✓</span></div>
+<p class="t">Aaj hi join karein — kal ye offer band ho sakta hai.</p>
+<div class="limited">🔴 Live • Last chance</div>
+<div class="chips"><span class="chip">🔥 Trending</span><span class="chip">⚡ Instant</span><span class="chip">🔒 Free</span></div>
+<input class="hp" tabindex="-1" autocomplete="off" name="email_confirm" aria-hidden="true">
+<a class="btn" href="{{JOIN_URL}}">Join Telegram</a>
+<div class="foot">Jaldi karein — spots kam hain</div>
+</div></body></html>
