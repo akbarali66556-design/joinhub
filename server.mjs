@@ -390,9 +390,12 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
   try {
-    // ----- landing -----
-    if (req.method === 'GET' && (p === '/' || p === '/go')) {
-      const cid = url.searchParams.get('c');
+    // ----- landing (short link /<clientId> ya /?c=<clientId>) -----
+    const seg = p.slice(1);
+    const RESERVED = new Set(['go', 'dp', 'join', 'seen', 'favicon.ico', 'robots.txt', 'dashboard.html', 'api']);
+    const pathCid = (req.method === 'GET' && !RESERVED.has(seg) && /^[a-z0-9_-]{1,24}$/i.test(seg) && db.clients[seg]) ? seg : null;
+    if (req.method === 'GET' && (p === '/' || p === '/go' || pathCid)) {
+      const cid = pathCid || url.searchParams.get('c');
       const client = cid && db.clients[cid];
       if (!client) {
         const ids = Object.keys(db.clients);
@@ -545,7 +548,7 @@ async function boot() {
 async function onListen() {
   console.log(`\n  JoinHub chal raha hai:`);
   console.log(`  Dashboard : ${CFG.publicUrl || 'http://localhost:' + CFG.port}/dashboard.html   (key: ${CFG.adminKey})`);
-  console.log(`  Landing   : /?c=<clientId>`);
+  console.log(`  Landing   : /<clientId>  (short)  ya  /?c=<clientId>`);
   console.log(`  Designs   : ${variants().join(', ') || '(koi nahi)'}`);
   console.log(`  Storage   : ${useUpstash ? 'Upstash (permanent) ✓' : 'local file (Render par reset ho sakta hai)'}`);
   if (DEMO) console.log('  ⚠ DEMO mode: .env me TELEGRAM_BOT_TOKEN daalo for real joins.');

@@ -550,7 +550,7 @@ tr:last-child td{border-bottom:0}
     if(!ids.length){ $('clientList').innerHTML=emptyBox('No clients yet','Click “+ Add client” to create your first one.'); return; }
     $('clientList').innerHTML='<div class="clist">'+ids.map(id=>{
       const c=clients[id], s=stats[id]||{total:0,real:0,fake:0};
-      const base=`${origin}/?c=${id}`;
+      const base=`${origin}/${id}`;
       const capi=c.pixel && c.pixel.length>=6 && c.metaToken && c.metaToken.length>8;
       const chan=c.channelTitle?`📢 ${esc(c.channelTitle)} ✓`:(c.tgChannel?`📢 ${esc(c.tgChannel)}`:'📢 no channel');
       return `<div class="ccard">
@@ -562,9 +562,9 @@ tr:last-child td{border-bottom:0}
           <div><span>Fake</span><b style="color:var(--bad)">${num(s.fake)}</b></div>
           <div><span>Total</span><b>${num(s.total)}</b></div></div>
         <div class="urlrow"><code title="${base}">${base}</code>
-          <button class="ibtn meta" data-copy="${base}&utm_source={{site_source_name}}" title="Meta ad ka pura link (FB+IG dono)">📋 Meta</button>
-          <button class="ibtn ig" data-copy="${base}&utm_source=instagram">IG</button>
-          <button class="ibtn fb" data-copy="${base}&utm_source=facebook">FB</button></div>
+          <button class="ibtn meta" data-copy="${base}" title="Short link — Meta ad me yahi daalo. Source ke liye URL parameters me utm_source={{site_source_name}} daalo.">📋 Copy short link</button>
+          <button class="ibtn ig" data-copy="${base}?utm_source=instagram" title="Test/manual IG link">IG</button>
+          <button class="ibtn fb" data-copy="${base}?utm_source=facebook" title="Test/manual FB link">FB</button></div>
         <div class="acts">
           <button data-view="${id}">📊 Analytics</button>
           <button data-edit="${id}">✏️ Edit</button>
