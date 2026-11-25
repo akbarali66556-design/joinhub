@@ -297,15 +297,21 @@ async function sendMetaEvent(v, client, attempt = 1) {
   const user_data = { client_ip_address: v.ip, client_user_agent: v.ua, external_id: [sha256(v.tgUser?.id ?? v.id)] };
   if (v.fbc) user_data.fbc = v.fbc;
   if (v.fbp) user_data.fbp = v.fbp;
-  const body = { data: [{
-    event_name: client.metaEvent || 'Lead',
+  // Ek join par ek ya kai event — "Subscribe+Lead" = dono jaayenge (Sales aur Leads dono campaign chalein)
+  const names = String(client.metaEvent || 'Lead').split(/[+,]/).map((s) => s.trim()).filter(Boolean);
+  if (!names.length) names.push('Lead');
+  const base = {
     event_time: Math.floor(v.joinedAt / 1000),
-    event_id: `join_${v.id}`,
     action_source: 'website',
     event_source_url: v.url || CFG.publicUrl,
     user_data,
     custom_data: { content_name: client.channelTitle || client.name, content_category: 'telegram_join', source: v.source, landing_variant: v.variant },
-  }] };
+  };
+  const body = { data: names.map((name) => ({
+    ...base,
+    event_name: name,
+    event_id: names.length > 1 ? `join_${v.id}_${name.toLowerCase()}` : `join_${v.id}`,
+  })) };
   if (client.metaTestCode) body.test_event_code = client.metaTestCode;
   try {
     const r = await fetch(`https://graph.facebook.com/${CFG.metaVersion}/${client.pixel}/events?access_token=${encodeURIComponent(client.metaToken)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
