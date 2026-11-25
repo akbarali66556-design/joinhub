@@ -328,9 +328,14 @@ tr:last-child td{border-bottom:0}
           <label class="lbl">Welcome message (join hone par)</label>
           <textarea class="field" id="setWelcome" rows="2" placeholder="Jaise: Welcome! Aap channel me jud gaye 🎉 (khali = kuch nahi bhejega)"></textarea>
         </div>
-        <div style="margin-bottom:18px">
+        <div style="margin-bottom:16px">
           <label class="lbl">Invite link valid time (minute)</label>
           <input class="field" id="setTtl" inputmode="numeric" placeholder="120">
+        </div>
+        <div style="margin-bottom:18px">
+          <label class="lbl">Auto-open channel (second)</label>
+          <input class="field" id="setRedir" inputmode="numeric" placeholder="3">
+          <span class="hint">Landing khulne ke itne second baad channel apne aap saamne khul jayega (banda Join na bhi dabaye). <b>0 = band</b>. Recommended: 3.</span>
         </div>
         <button class="btn-primary" id="setSave">Save settings</button>
       </div>
@@ -466,6 +471,7 @@ tr:last-child td{border-bottom:0}
     const s=d.settings||{};
     setAutoVal=!!s.autoApprove; $('setAuto').classList.toggle('on',setAutoVal);
     $('setWelcome').value=s.welcome||''; $('setTtl').value=s.linkTtlMin||120;
+    $('setRedir').value=(s.autoRedirectSec!==undefined?s.autoRedirectSec:3);
     const mode = d.demo ? '<span style="color:var(--warn)">DEMO</span>' : '<span style="color:var(--good)">LIVE</span>';
     const botTxt = d.demo ? 'Token nahi' : (d.bot&&d.bot.ok?('@'+esc(d.bot.username||'')):'problem');
     $('setStatus').innerHTML=
@@ -478,7 +484,7 @@ tr:last-child td{border-bottom:0}
   $('setSave').onclick=async()=>{
     $('setSave').disabled=true; $('setSave').textContent='Saving…';
     try{ const res=await api('/api/settings',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({autoApprove:setAutoVal,welcome:$('setWelcome').value,linkTtlMin:$('setTtl').value})});
+      body:JSON.stringify({autoApprove:setAutoVal,welcome:$('setWelcome').value,linkTtlMin:$('setTtl').value,autoRedirectSec:$('setRedir').value})});
       toast(res.ok?'Settings saved ✓':'Save failed',!res.ok);
     }catch(e){ toast('Network error',true); }
     finally{ $('setSave').disabled=false; $('setSave').textContent='Save settings'; }

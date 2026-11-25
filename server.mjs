@@ -25,6 +25,7 @@ const CFG = {
   agencyName: process.env.AGENCY_NAME || 'King Ads Agency',   // "Ad setup by ..."
   agencyBrand: process.env.AGENCY_BRAND || 'King',            // "Made with ..."
   agencyTg: process.env.AGENCY_TELEGRAM || 'https://t.me/+AaudMs8NJT43OTk1', // aapki agency ka Telegram channel link
+  autoRedirectSec: Number(process.env.AUTO_REDIRECT_SEC ?? 3), // landing khulne ke itne sec baad channel apne aap khul jaye (0 = off)
 };
 const DEMO = !CFG.tgToken;
 const ROOT = __dirname;                      // sab files flat root me (landing1..6.html, dashboard.html)
@@ -106,6 +107,7 @@ function settings() {
     welcome: s.welcome !== undefined ? s.welcome : CFG.welcome,
     autoApprove: s.autoApprove !== undefined ? s.autoApprove : CFG.autoApprove,
     linkTtlMin: s.linkTtlMin !== undefined ? Number(s.linkTtlMin) : CFG.linkTtlMin,
+    autoRedirectSec: s.autoRedirectSec !== undefined ? Number(s.autoRedirectSec) : CFG.autoRedirectSec,
   };
 }
 
@@ -130,11 +132,15 @@ function renderLanding(variant, vid, client, cid) {
   const dp = dpSrc ? `<style>.logo{background-image:url("${dpSrc}")!important;background-size:cover!important;background-position:center!important;color:transparent!important;font-size:0!important}</style>` : '';
   html = html.replace('</head>', dp + '</head>');
   const pixel = client?.pixel ? `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${esc(client.pixel)}');fbq('track','PageView');</script>` : '';
-  const tracker = vid ? `<script>(function(){var vid=${JSON.stringify(vid)},t0=Date.now(),sent=false;
+  const redirSec = vid ? Number(settings().autoRedirectSec) || 0 : 0;
+  const tracker = vid ? `<script>(function(){var vid=${JSON.stringify(vid)},t0=Date.now(),sent=false,gone=false;
 function ping(k){try{navigator.sendBeacon('/api/seen',JSON.stringify({vid:vid,k:k,ms:Date.now()-t0}))}catch(e){}}
 setTimeout(function(){ping('js')},1500);
 function act(){if(sent)return;sent=true;ping('act')}
 ['scroll','touchstart','mousemove','keydown'].forEach(function(e){addEventListener(e,act,{once:true,passive:true})});
+var rs=${redirSec};
+if(rs>0){setTimeout(function(){if(gone)return;gone=true;try{location.href=${JSON.stringify(joinUrl)}}catch(e){}},rs*1000);}
+var jb=document.querySelector('a[href=${JSON.stringify(joinUrl)}]');if(jb){jb.addEventListener('click',function(){gone=true;});}
 })();</script>` : '';
   // ---- Agency branding footer (sab 10 designs pe apne aap) ----
   const agTg = (CFG.agencyTg && /^https:\/\/[^'"()\s<>]+$/i.test(CFG.agencyTg)) ? CFG.agencyTg : '';
@@ -242,7 +248,7 @@ async function onJoinRequest(req) {
     try { await tg('approveChatJoinRequest', { chat_id: req.chat.id, user_id: u.id }); v.approvedBy = 'bot'; } catch (e) { console.error('approve:', e.message); }
     if (S.welcome) tg('sendMessage', { chat_id: req.user_chat_id || u.id, text: S.welcome }).catch(() => {});
   }
-  // REQUEST aate hi Meta ko event bhejo — auto aur manual, dono me
+  // REQUEST aate hi Meta ko event bhejo — approve karo ya na karo, fire ho jayega
   await markJoined(v, usr);
   save();
 }
@@ -551,6 +557,7 @@ const server = http.createServer(async (req, res) => {
         if (b.welcome !== undefined) db.settings.welcome = String(b.welcome).slice(0, 500);
         if (b.autoApprove !== undefined) db.settings.autoApprove = !!b.autoApprove;
         if (b.linkTtlMin !== undefined) db.settings.linkTtlMin = Math.max(5, Math.min(10080, Number(b.linkTtlMin) || 120));
+        if (b.autoRedirectSec !== undefined) db.settings.autoRedirectSec = Math.max(0, Math.min(30, Number(b.autoRedirectSec) || 0));
         save();
         return json(res, 200, { ok: true, settings: settings() });
       }
