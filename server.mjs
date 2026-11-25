@@ -21,6 +21,10 @@ const CFG = {
   autoApprove: (process.env.AUTO_APPROVE || 'true') === 'true',
   welcome: process.env.WELCOME_MESSAGE || '',
   metaVersion: process.env.META_API_VERSION || 'v23.0',
+  // ---- Agency branding (landing page footer) ----
+  agencyName: process.env.AGENCY_NAME || 'King Ads Agency',   // "Ad setup by ..."
+  agencyBrand: process.env.AGENCY_BRAND || 'King',            // "Made with ..."
+  agencyTg: process.env.AGENCY_TELEGRAM || 'https://t.me/+AaudMs8NJT43OTk1', // aapki agency ka Telegram channel link
 };
 const DEMO = !CFG.tgToken;
 const ROOT = __dirname;                      // sab files flat root me (landing1..6.html, dashboard.html)
@@ -132,7 +136,26 @@ setTimeout(function(){ping('js')},1500);
 function act(){if(sent)return;sent=true;ping('act')}
 ['scroll','touchstart','mousemove','keydown'].forEach(function(e){addEventListener(e,act,{once:true,passive:true})});
 })();</script>` : '';
-  return html.replace('</body>', `${pixel}${tracker}</body>`);
+  // ---- Agency branding footer (sab 10 designs pe apne aap) ----
+  const agTg = (CFG.agencyTg && /^https:\/\/[^'"()\s<>]+$/i.test(CFG.agencyTg)) ? CFG.agencyTg : '';
+  const ini = esc((CFG.agencyBrand || 'K').trim()[0] || 'K');
+  const aO = agTg ? `<a href="${agTg}" target="_blank" rel="noopener noreferrer"` : '<span';
+  const aC = agTg ? '</a>' : '</span>';
+  const footer = `<style>
+body{flex-direction:column!important}
+.jhaf{width:100%;max-width:420px;margin:18px auto 6px;text-align:center;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.jhaf-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:999px;padding:9px 15px;font-size:13px;font-weight:600;color:#fff;text-decoration:none;cursor:${agTg ? 'pointer' : 'default'}}
+.jhaf-ini{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#6366f1);display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
+.jhaf-disc{margin:16px auto 0;max-width:420px;font-size:11px;line-height:1.55;color:rgba(255,255,255,.5);padding:0 8px}
+.jhaf-made{display:inline-flex;align-items:center;gap:7px;margin-top:14px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;color:rgba(255,255,255,.88);text-decoration:none}
+.jhaf-made .jhaf-ini{width:20px;height:20px;border-radius:6px;font-size:11px}
+</style>
+<div class="jhaf">
+  ${aO} class="jhaf-badge"><span class="jhaf-ini">${ini}</span>&nbsp;Ad setup by&nbsp;<b>${esc(CFG.agencyName)}</b>${aC}
+  <p class="jhaf-disc">18+ only. This site is not a part of the Facebook website or Meta Platforms, Inc. This site is NOT endorsed by Facebook, Instagram or Telegram in any way. FACEBOOK and INSTAGRAM are trademarks of Meta Platforms, Inc. TELEGRAM is a trademark of its owner. We cannot and do not make any guarantees about your ability to get results or earn any money. Participate responsibly.</p>
+  <div>${aO} class="jhaf-made"><span class="jhaf-ini">${ini}</span>&nbsp;Made with&nbsp;<b>${esc(CFG.agencyBrand)}</b>${aC}</div>
+</div>`;
+  return html.replace('</body>', `${footer}${pixel}${tracker}</body>`);
 }
 
 // ---------- Telegram ----------
@@ -250,8 +273,11 @@ function onMyChatMember(m) {
   save();
 }
 async function markJoined(v, user) {
-  if (v.joinedAt) return;
-  if (db.tgUsers[user.id] && db.tgUsers[user.id] !== v.id) { v.duplicateOf = db.tgUsers[user.id]; save(); return; }
+  if (v.joinedAt) return; // isi visit ke liye pehle hi bhej diya (ek join = ek event)
+  // Note: agar yahi Telegram user pehle bhi aaya tha, use block NAHI karte —
+  // naya click/join = naya asli conversion, naya event_id (join_<vid>) se Meta khud dedupe karta hai.
+  const prev = db.tgUsers[user.id];
+  if (prev && prev !== v.id) v.rejoinOf = prev; // sirf info ke liye (ye banda dobara aaya)
   v.joinedAt = Date.now(); v.tgUser = user; db.tgUsers[user.id] = v.id;
   if (db.pending) delete db.pending[String(user.id)];
   save();
